@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>TryWellBug – Ankit Singh · Performance Logs — of GPUs & Life</title>
+  <title>TryWellBug – Ankit Singh</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
@@ -63,18 +63,21 @@
     }
 
     h1 {
-      margin-top: 1.2rem;
-      font-size: clamp(2rem, 4vw, 2.6rem);
       font-weight: 700;
       letter-spacing: -0.04em;
     }
 
-    .typewriter {
-      white-space: nowrap;
+    .typewriter-line {
+      white-space: normal;
       overflow: hidden;
       border-right: 2px solid var(--accent);
-      padding-right: 4px;
+      padding-right: 6px;
+      display: inline-block;
       animation: caret 0.75s steps(1) infinite;
+      font-family: var(--font-main);
+      font-size: clamp(1.4rem, 4vw, 2.3rem);
+      margin-top: 1rem;
+      margin-bottom: 0.15rem;
     }
 
     @keyframes caret {
@@ -223,6 +226,12 @@
       gap: 0.6rem;
       justify-content: space-between;
     }
+
+    /* Make ALL text look typewriter-style */
+    body, h1, h2, h3, p, a, div, section, footer,
+    .card, .card-body, .card-title, .btn, .badge {
+      font-family: var(--font-main) !important;
+    }
   </style>
 </head>
 <body>
@@ -233,15 +242,16 @@
         <span>Try · Well · Debug</span>
       </div>
 
-      <!-- Typewriter line -->
-      <h1 class="typewriter" data-text="TryWellBug — Performance Logs — of GPUs & Life."></h1>
+      <!-- Two-line typewriter heading -->
+      <h1 class="typewriter-line" data-text="TryWellBug "></h1>
+      <h1 class="typewriter-line" data-text="aPerformance Logs — of mainly GPUs & sometimes Life."></h1>
 
       <p class="subtitle">
-        TryWellBug is my little corner of the internet. I believe journey of life  and this wwwweird blog name is a mix of <strong>travel</strong>, constantly
-        <strong>trying</strong> new things, <strong>keeping yourself well and fit</strong>, and always
+         TryWellBug is my little corner of the internet. I believe journey of life  (and also this wwwweird blog name) 
+		 is a mix of <strong>travel</strong>, constantly <strong>trying</strong> new things, <strong>keeping yourself well and fit</strong>, and always
         <strong>finding bugs</strong>. Started this little space just to try if I can write as well what I hear in my mind. ( I know it sounds much better when it is there)
 		Would share my experiences and learnings in code, systems, and life — and the fixes I discover along the way. 
-		As it is easy to express techinical perspective first and let people judge. Will start with that for first few months. Lets hear it then ...
+		As it is goes , I gathered some courage to express techinical perspective first and let people judge in case they find it. Will start with that for first few months. Lets hear it then ...
       </p>
 
       <div class="links">
@@ -284,11 +294,11 @@
             <div class="card-meta">Jan 5, 2026 · 4 min read</div>
           </div>
           <p class="card-body">
-            Looking at my habits the way I look at GPU traces: finding small regressions, profiling energy, and shipping tiny fixes.
+            Lets how each company shaped their GPUs and rendered the final pixel .
           </p>
           <div class="tag-row">
-            <span class="tag">Habits</span>
-            <span class="tag">Mindset</span>
+            <span class="tag">Graphics</span>
+            <span class="tag">Comparision</span>
           </div>
           <a href="#" class="blog-link">Read post</a>
         </article>
@@ -318,11 +328,13 @@
           <div class="card-body">
             <strong>Senior Engineer – GPU Performance & Architecture · Huawei</strong><br />
             2022 – Present · Cambridge, UK<br />
-            • ML-based DVFS prediction, GPU power estimation in Huawei Graphics Profiler, neural AO / GI, and HiVoyager GPU pipeline modeling (depth, rasterizer, binning).<br /><br />
+            • ML-based DVFS prediction, GPU power estimation in Huawei Graphics Profiler, neural AO / GI,
+            and HiVoyager GPU pipeline modeling (depth, rasterizer, binning).<br /><br />
 
             <strong>Staff Engineer – GPU Architecture · Qualcomm Adreno</strong><br />
             2016 – 2022 · Bangalore, India<br />
-            • C++ functional models for GPU blocks, mesh shader adoption, variable-rate tessellation, and edge-based anti-aliasing (multiple patents).
+            • C++ functional models for GPU blocks, mesh shader adoption, variable-rate tessellation,
+            and edge-based anti-aliasing (multiple patents).
           </div>
         </article>
 
@@ -353,29 +365,35 @@
   </div>
 
   <script>
-    // Typewriter effect for the main heading
+    // Multi-line typewriter effect
     (function () {
-      const el = document.querySelector(".typewriter");
-      if (!el) return;
+      const lines = document.querySelectorAll(".typewriter-line");
 
-      const text = el.getAttribute("data-text") || "";
-      let index = 0;
+      function runTypewriter(el, delayStart = 0) {
+        const text = el.getAttribute("data-text") || "";
+        let i = 0;
+        el.textContent = "";
 
-      el.textContent = "";
-
-      function typeNextChar() {
-        if (index <= text.length) {
-          el.textContent = text.slice(0, index);
-          index++;
-          const delay = 60 + Math.random() * 70; // a bit irregular, like a real typewriter
-          setTimeout(typeNextChar, delay);
+        function typing() {
+          if (i <= text.length) {
+            el.textContent = text.slice(0, i);
+            i++;
+            const delay = 50 + Math.random() * 70; // irregular, like a real typewriter
+            setTimeout(typing, delay);
+          }
         }
+        setTimeout(typing, delayStart);
       }
 
-      setTimeout(typeNextChar, 500);
+      let delay = 500;
+      lines.forEach(line => {
+        runTypewriter(line, delay);
+        const len = (line.getAttribute("data-text") || "").length;
+        delay += len * 55;
+      });
     })();
 
-    // Set current year
+    // Set current year in footer
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 </body>
