@@ -2,18 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>TryWellBug – Resume & Blog</title>
+  <title>TryWellBug – Ankit Singh · Performance Logs — of GPUs & Life</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
-      --bg: #050608;
-      --accent: #00ff9c;
-      --text: #f5f5f5;
-      --muted: #9ca3af;
-      --card: #0b0d11;
-      --border: #1f2933;
-      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --font-mono: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --bg: #fdfdfd;
+      --accent: #2563eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --font-main: "Courier New", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
     }
 
     * {
@@ -24,7 +23,7 @@
 
     body {
       font-family: var(--font-main);
-      background: radial-gradient(circle at top left, #111827 0, #020617 50%, #000 100%);
+      background: var(--bg);
       color: var(--text);
       min-height: 100vh;
       line-height: 1.6;
@@ -46,10 +45,10 @@
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      padding: 0.15rem 0.5rem;
+      padding: 0.15rem 0.7rem;
       border-radius: 999px;
-      border: 1px solid rgba(0, 255, 156, 0.3);
-      background: rgba(0, 255, 156, 0.06);
+      border: 1px solid var(--accent);
+      background: #eff6ff;
       color: var(--accent);
       font-size: 0.75rem;
       letter-spacing: 0.08em;
@@ -61,18 +60,16 @@
       height: 6px;
       border-radius: 999px;
       background: var(--accent);
-      box-shadow: 0 0 12px rgba(0, 255, 156, 0.9);
     }
 
     h1 {
       margin-top: 1.2rem;
-      font-size: clamp(2.4rem, 4vw, 3rem);
+      font-size: clamp(2rem, 4vw, 2.6rem);
       font-weight: 700;
       letter-spacing: -0.04em;
     }
 
     .typewriter {
-      font-family: var(--font-mono);
       white-space: nowrap;
       overflow: hidden;
       border-right: 2px solid var(--accent);
@@ -88,9 +85,9 @@
 
     .subtitle {
       margin-top: 0.9rem;
-      max-width: 32rem;
+      max-width: 38rem;
       color: var(--muted);
-      font-size: 0.98rem;
+      font-size: 0.95rem;
     }
 
     .links {
@@ -102,10 +99,10 @@
 
     .btn {
       border-radius: 999px;
-      padding: 0.55rem 1.2rem;
-      font-size: 0.9rem;
+      padding: 0.5rem 1.2rem;
+      font-size: 0.85rem;
       border: 1px solid var(--border);
-      background: rgba(15, 23, 42, 0.8);
+      background: #f9fafb;
       color: var(--text);
       text-decoration: none;
       display: inline-flex;
@@ -115,20 +112,20 @@
     }
 
     .btn.primary {
-      border-color: rgba(0, 255, 156, 0.4);
-      background: linear-gradient(135deg, rgba(0, 255, 156, 0.12), rgba(15, 23, 42, 0.9));
+      border-color: var(--accent);
+      background: #eff6ff;
     }
 
     .btn:hover {
       transform: translateY(-1px);
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.6);
-      border-color: rgba(148, 163, 184, 0.7);
-      background: rgba(15, 23, 42, 0.9);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      border-color: #9ca3af;
+      background: #f3f4f6;
     }
 
     main {
       display: grid;
-      grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.4fr);
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr);
       gap: 2.5rem;
     }
 
@@ -143,7 +140,7 @@
     }
 
     .section-title {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       color: var(--muted);
@@ -151,12 +148,11 @@
     }
 
     .card {
-      background: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.85));
-      border-radius: 1.1rem;
+      background: var(--card);
+      border-radius: 0.9rem;
       border: 1px solid var(--border);
-      padding: 1.1rem 1.2rem;
-      margin-bottom: 0.8rem;
-      box-shadow: 0 14px 40px rgba(15, 23, 42, 0.7);
+      padding: 1rem 1.1rem;
+      margin-bottom: 0.7rem;
     }
 
     .card-header {
@@ -168,11 +164,11 @@
 
     .card-title {
       font-weight: 600;
-      font-size: 1rem;
+      font-size: 0.95rem;
     }
 
     .card-meta {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--muted);
       text-align: right;
       white-space: nowrap;
@@ -180,8 +176,8 @@
 
     .card-body {
       margin-top: 0.4rem;
-      font-size: 0.9rem;
-      color: #e5e7eb;
+      font-size: 0.88rem;
+      color: #111827;
     }
 
     .tag-row {
@@ -193,19 +189,19 @@
 
     .tag {
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      padding: 0.1rem 0.5rem;
+      border: 1px solid #d1d5db;
+      padding: 0.05rem 0.5rem;
       font-size: 0.7rem;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
+      letter-spacing: 0.08em;
+      color: #4b5563;
     }
 
     .blog-link {
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      font-size: 0.88rem;
+      font-size: 0.82rem;
       color: var(--accent);
       text-decoration: none;
       margin-top: 0.4rem;
@@ -234,24 +230,25 @@
     <header>
       <div class="badge">
         <span class="badge-dot"></span>
-        <span>Exploring · Learning · Debugging</span>
+        <span>Try · Well · Debug</span>
       </div>
 
-      <!-- Typewriter text -->
-      <h1 class="typewriter" data-text="Welcome to TryWellBug — travel, trying, staying well, and debugging life."></h1>
+      <!-- Typewriter line -->
+      <h1 class="typewriter" data-text="TryWellBug — Performance Logs — of GPUs & Life."></h1>
 
       <p class="subtitle">
-        TryWellBug is my little corner of the internet: a mashup of <strong>travel</strong>,
-        <strong>trying</strong> new things, <strong>keeping myself well and fit</strong>, and always
-        <strong>finding bugs</strong> — in code, habits, and life — and sharing the solutions I discover along the way.
+        TryWellBug is my little corner of the internet. I believe journey of life  and this wwwweird blog name is a mix of <strong>travel</strong>, constantly
+        <strong>trying</strong> new things, <strong>keeping yourself well and fit</strong>, and always
+        <strong>finding bugs</strong>. Started this little space just to try if I can write as well what I hear in my mind. ( I know it sounds much better when it is there)
+		Would share my experiences and learnings in code, systems, and life — and the fixes I discover along the way. 
+		As it is easy to express techinical perspective first and let people judge. Will start with that for first few months. Lets hear it then ...
       </p>
 
       <div class="links">
-        <a href="#blog" class="btn primary">Read my blog</a>
-        <a href="#resume" class="btn">View résumé</a>
-        <!-- Replace with your real links -->
-        <a href="https://github.com/YOUR-GITHUB-USERNAME" class="btn">GitHub</a>
-        <a href="mailto:you@example.com" class="btn">Email me</a>
+        <a href="#blog" class="btn primary">Read the blog</a>
+        <a href="#resume" class="btn">View resume</a>
+        <a href="https://github.com/trywellbug" class="btn">GitHub</a>
+        <a href="mailto:ankitsingh.mailbox@gmail.com" class="btn">Email</a>
       </div>
     </header>
 
@@ -266,10 +263,10 @@
             <div>
               <h3 class="card-title">Launching TryWellBug</h3>
             </div>
-            <div class="card-meta">Jan 1, 2026 · 3 min read</div>
+            <div class="card-meta">Nov 30, 2025 · 3 min read</div>
           </div>
           <p class="card-body">
-            Why I created TryWellBug and how travel, trying new things, staying well, and debugging life all ended up in one place.
+            Why I created TryWellBug and how travel, trying new things, staying well, and debugging life all ended up under one name.
           </p>
           <div class="tag-row">
             <span class="tag">Intro</span>
@@ -282,12 +279,12 @@
         <article class="card">
           <div class="card-header">
             <div>
-              <h3 class="card-title">Tiny Bugs, Tiny Fixes</h3>
+              <h3 class="card-title">Comparision of Life of a Pixel in AMD / ARM / Qualcomm ( Mobile Devices ) </h3>
             </div>
             <div class="card-meta">Jan 5, 2026 · 4 min read</div>
           </div>
           <p class="card-body">
-            A collection of small “bugs” I’ve found in my routines, mindset, and code — and the small fixes that made life a bit smoother.
+            Looking at my habits the way I look at GPU traces: finding small regressions, profiling energy, and shipping tiny fixes.
           </p>
           <div class="tag-row">
             <span class="tag">Habits</span>
@@ -297,69 +294,66 @@
         </article>
       </section>
 
-      <!-- RIGHT COLUMN: RESUME / ABOUT -->
+      <!-- RIGHT COLUMN: MINIMAL RESUME -->
       <section id="resume">
-        <h2 class="section-title">Résumé</h2>
+        <h2 class="section-title">Resume</h2>
 
-        <!-- About -->
+        <!-- About (minimal) -->
         <article class="card">
           <div class="card-header">
             <h3 class="card-title">About</h3>
           </div>
           <p class="card-body">
-            Hi, I’m Ankit Singh. Working as GPU Researcher / Engineer in Huawei. TryWellBug is where I combine <strong>travel</strong>, constant
-            <strong>trying</strong>, <strong>wellness</strong>, and a love for finding and fixing
-            <strong>bugs</strong> — whether that’s in software, systems, or everyday life. I use this space to
-            document what I’m learning, what I’m building, and how I’m improving over time.
+            I’m Ankit Singh, a GPU <strong>Performance, Power & Architecture Engineer</strong> with 9+ years across
+            <strong>Huawei HiVoyager GPU</strong> and <strong>Qualcomm Adreno</strong>. I work on GPU performance analysis,
+            power prediction, DVFS modeling, and graphics / neural rendering pipelines, with features shipped in flagship devices.
           </p>
         </article>
 
-        <!-- Experience -->
+        <!-- Experience (compact) -->
         <article class="card">
           <div class="card-header">
             <h3 class="card-title">Experience</h3>
           </div>
           <div class="card-body">
-            <strong>Your Role — Company</strong><br />
-            2023 – Present · Location<br />
-            <span style="color: var(--muted); font-size: 0.85rem;">
-              One or two short sentences about what you work on and the impact you have.
-            </span>
-            <br /><br />
-            <strong>Previous Role — Company</strong><br />
-            2021 – 2023 · Location<br />
-            <span style="color: var(--muted); font-size: 0.85rem;">
-              Another short description, focusing on outcomes, not just tasks.
-            </span>
+            <strong>Senior Engineer – GPU Performance & Architecture · Huawei</strong><br />
+            2022 – Present · Cambridge, UK<br />
+            • ML-based DVFS prediction, GPU power estimation in Huawei Graphics Profiler, neural AO / GI, and HiVoyager GPU pipeline modeling (depth, rasterizer, binning).<br /><br />
+
+            <strong>Staff Engineer – GPU Architecture · Qualcomm Adreno</strong><br />
+            2016 – 2022 · Bangalore, India<br />
+            • C++ functional models for GPU blocks, mesh shader adoption, variable-rate tessellation, and edge-based anti-aliasing (multiple patents).
           </div>
         </article>
 
-        <!-- Skills -->
+        <!-- Skills (very concise) -->
         <article class="card">
           <div class="card-header">
-            <h3 class="card-title">Skills</h3>
+            <h3 class="card-title">Key skills</h3>
           </div>
           <p class="card-body">
-            A quick snapshot of what I work with and care about.
+            GPU performance & power · DVFS modeling · Vulkan / DirectX / OpenGL · Neural rendering (AO / GI) ·
+            C++ / Python · Shader optimization · Perfetto / Nsight / RenderDoc.
           </p>
           <div class="tag-row">
-            <span class="tag">Writing</span>
-            <span class="tag">[Skill 1]</span>
-            <span class="tag">[Skill 2]</span>
-            <span class="tag">[Skill 3]</span>
+            <span class="tag">GPU</span>
+            <span class="tag">Performance</span>
+            <span class="tag">Power</span>
+            <span class="tag">Graphics</span>
+            <span class="tag">Neural Rendering</span>
           </div>
         </article>
       </section>
     </main>
 
     <footer>
-      <span>© <span id="year"></span> TryWellBug</span>
-      <span>Built with GitHub Pages · Typewriter effect in vanilla JS</span>
+      <span>© <span id="year"></span> TryWellBug · Ankit Singh</span>
+      <span>Built on GitHub Pages · Typed like an old machine</span>
     </footer>
   </div>
 
   <script>
-    // Typewriter effect
+    // Typewriter effect for the main heading
     (function () {
       const el = document.querySelector(".typewriter");
       if (!el) return;
@@ -373,15 +367,15 @@
         if (index <= text.length) {
           el.textContent = text.slice(0, index);
           index++;
-          const delay = 70 + Math.random() * 80;
+          const delay = 60 + Math.random() * 70; // a bit irregular, like a real typewriter
           setTimeout(typeNextChar, delay);
         }
       }
 
-      setTimeout(typeNextChar, 600);
+      setTimeout(typeNextChar, 500);
     })();
 
-    // Set current year in footer
+    // Set current year
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 </body>
