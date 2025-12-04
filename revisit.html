@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TryWellBug – My Favorite Revisits</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #fdfdfd;
+      --accent: #2563eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --font-main: "Courier New", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .wrapper {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    header {
+      padding: 2rem 0 2.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2.5rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.15rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      background: #eff6ff;
+      color: var(--accent);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    h1 {
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+
+    .typewriter-line {
+      white-space: normal;
+      overflow: hidden;
+      border-right: 2px solid var(--accent);
+      padding-right: 6px;
+      display: inline-block;
+      animation: caret 0.75s steps(1) infinite;
+      font-family: var(--font-main);
+      font-size: clamp(1.4rem, 4vw, 2.3rem);
+      margin-top: 1rem;
+      margin-bottom: 0.15rem;
+    }
+
+    @keyframes caret {
+      50% {
+        border-right-color: transparent;
+      }
+    }
+
+    .subtitle {
+      margin-top: 0.9rem;
+      max-width: 40rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .links {
+      margin-top: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      border-radius: 999px;
+      padding: 0.5rem 1.2rem;
+      font-size: 0.85rem;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      color: var(--text);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    }
+
+    .btn.primary {
+      border-color: var(--accent);
+      background: #eff6ff;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      border-color: #9ca3af;
+      background: #f3f4f6;
+    }
+
+    section {
+      margin-bottom: 2.5rem;
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.9rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 0.9rem;
+      border: 1px solid var(--border);
+      padding: 1rem 1.1rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: baseline;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .card-body {
+      margin-top: 0.4rem;
+      font-size: 0.88rem;
+      color: #111827;
+    }
+
+    .card-body p {
+      margin-bottom: 0.3rem;
+    }
+
+    footer {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      justify-content: space-between;
+    }
+
+    /* Make ALL text typewriter style */
+    body, h1, h2, h3, p, a, div, section, footer,
+    .card, .card-body, .card-title, .btn, .badge {
+      font-family: var(--font-main) !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <div class="badge">
+        <span class="badge-dot"></span>
+        <span>Revisit · Reflect · Reuse</span>
+      </div>
+
+      <!-- Two-line typewriter heading for this page -->
+      <h1 class="typewriter-line" data-text="My Favorite Revisits"></h1>
+      <h1 class="typewriter-line" data-text="Quotes, videos & deep dives I keep coming back to."></h1>
+
+      <p class="subtitle">
+        This page collects the things I don’t want to lose: lines that reset my brain, videos that changed how I think,
+        and technical resources I revisit when I’m debugging GPUs, habits, or life.
+      </p>
+
+      <div class="links">
+        <a href="index.html" class="btn primary">← Back to home</a>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <h2 class="section-title">Quotes</h2>
+        <article class="card">
+          <div class="card-header">
+            <h3 class="card-title">Lines worth rereading</h3>
+          </div>
+          <div class="card-body">
+            <p>“ Action creates Momentum” — Dorothy Parker</p>
+            <p>“You have the right to perform your duty, but not to the fruit of the action. (कर्मण्येवाधिकारस्ते मा फलेषु कदाचन।)- Bhagvad Gita ”</p>
+          </div>
+        </article>
+      </section>
+
+      <section>
+        <h2 class="section-title">OSTs</h2>
+        <article class="card">
+          <div class="card-header">
+            <h3 class="card-title">Work soundtracks which make me work confidently and mostly leading to wrong codes/bugs :P </h3>
+          </div>
+          <div class="card-body">
+            <p>• <a href="https://www.youtube.com/watch?v=h4oKKW3RaoE&t=3418s" target="_blank">Ludovico Einaudi 2017 Berlin full concert</a></p>
+            <p>• <a href="https://www.youtube.com/watch?v=usmRIFdDwTE&list=RDusmRIFdDwTE&start_radio=1&t=724s" target="_blank">Demon Slayer: Yoriichi Theme | 1 HOUR EPIC VERSION</a></p>
+            <p>• <a href="https://www.youtube.com/watch?v=iZmwdsuO2ow&list=RDiZmwdsuO2ow&start_radio=1&t=939s" target="_blank">Pacific Rim main Theme song [1 Hour Long]</a></p>
+          </div>
+        </article>
+      </section>
+
+      <section>
+        <h2 class="section-title">Technical Resources</h2>
+        <article class="card">
+          <div class="card-header">
+            <h3 class="card-title">GPU, rendering & ML references</h3>
+          </div>
+          <div class="card-body">
+            <p>• <a href="https://www.scratchapixel.com/" target="_blank">Scratch A Pixel</a></p>
+            <p>• <a href="https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/" target="_blank">A trip through the Graphics Pipeline </a></p>
+          </div>
+        </article>
+      </section>
+
+      <section>
+        <h2 class="section-title">Tiny Lessons</h2>
+        <article class="card">
+          <div class="card-header">
+            <h3 class="card-title">Notes to future me</h3>
+          </div>
+          <div class="card-body">
+            <p>• Small bugs caught early beat heroic fixes later.</p>
+            <p>• Fitness, sleep, and focus are performance features, not “nice-to-haves”.</p>
+            <p>• When stuck, write: logs, notes, or a tiny BLOG POST.</p>
+            <p>• Most “mystery” issues are missing data, not missing intelligence.</p>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer>
+      <span>© <span id="year"></span> TryWellBug · Ankit Singh</span>
+      <span>Built on GitHub Pages · Typed like an old machine</span>
+    </footer>
+  </div>
+
+  <script>
+    // Multi-line typewriter effect for this page
+    (function () {
+      const lines = document.querySelectorAll(".typewriter-line");
+
+      function runTypewriter(el, delayStart = 0) {
+        const text = el.getAttribute("data-text") || "";
+        let i = 0;
+        el.textContent = "";
+
+        function typing() {
+          if (i <= text.length) {
+            el.textContent = text.slice(0, i);
+            i++;
+            const delay = 50 + Math.random() * 70;
+            setTimeout(typing, delay);
+          }
+        }
+        setTimeout(typing, delayStart);
+      }
+
+      let delay = 500;
+      lines.forEach(line => {
+        runTypewriter(line, delay);
+        const len = (line.getAttribute("data-text") || "").length;
+        delay += len * 55;
+      });
+    })();
+
+    // Set current year in footer
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
