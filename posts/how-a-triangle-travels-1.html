@@ -729,5 +729,40 @@
 
     </article>
   </main>
+	    </article>
+  </main>
+
+  <!-- Multi-line typewriter effect for blog headings -->
+  <script>
+  (function () {
+    const lines = document.querySelectorAll(".typewriter-line");
+
+    function runTypewriter(el, delayStart = 0) {
+      const text = el.getAttribute("data-text") || "";
+      let i = 0;
+      el.textContent = "";
+
+      function typing() {
+        if (i <= text.length) {
+          el.textContent = text.slice(0, i);
+          i++;
+          const delay = 50 + Math.random() * 70; // irregular typing
+          setTimeout(typing, delay);
+        }
+      }
+      setTimeout(typing, delayStart);
+    }
+
+    let delay = 500;
+    lines.forEach(line => {
+      runTypewriter(line, delay);
+      const len = (line.getAttribute("data-text") || "").length;
+      delay += len * 55;
+    });
+  })();
+  </script>
+</body>
+</html>
+
 </body>
 </html>
