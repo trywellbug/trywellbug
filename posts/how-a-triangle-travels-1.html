@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>How a Triangle Travels — A Mobile GPU Itinerary</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- 🔍 SEO Description -->
+  <meta name="description" content="A deep dive into how a triangle travels inside a mobile GPU — covering the graphics pipeline, tile-based rendering, ARM Mali vs Qualcomm Adreno architecture insights, shader stages, and performance fundamentals.">
+
+  <!-- 🔍 SEO Keywords -->
+  <meta name="keywords" content="GPU, Mobile GPU, Graphics Pipeline, Tile Based Rendering, GPU Architecture, ARM Mali, Qualcomm Adreno, Vulkan, OpenGL, DirectX, Vertex Shader, Pixel Shader, Tile Rendering, Mobile Rendering, Binning Pass, GPU Internals, Rendering Optimisation">
+
+  <!-- 🟦 Open Graph -->
+  <meta property="og:title" content="How a Triangle Travels — A Mobile GPU Itinerary">
+  <meta property="og:description" content="A technical yet friendly journey through the mobile GPU pipeline and the architectural differences between Mali and Adreno GPUs.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="https://trywellbug.com/assets/img/blog1/Triangle_to_Pixels.png">
+  <meta property="og:url" content="https://trywellbug.com/blog/how-a-triangle-travels">
+  <meta property="og:site_name" content="TryWellBug">
+
+  <!-- 🐦 Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="How a Triangle Travels — A Mobile GPU Itinerary">
+  <meta name="twitter:description" content="Why mobile GPUs use tile-based rendering, how triangles travel through Mali and Adreno pipelines, and the engineering behind it.">
+  <meta name="twitter:image" content="https://trywellbug.com/assets/img/blog1/Triangle_to_Pixels.png">
+
+  <!-- 📚 JSON-LD Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "How a Triangle Travels — A Mobile GPU Itinerary",
+    "author": { "@type": "Person", "name": "Ankit Singh" },
+    "image": "https://trywellbug.com/assets/img/blog1/Triangle_to_Pixels.png",
+    "url": "https://trywellbug.com/blog/how-a-triangle-travels",
+    "keywords": "GPU, Mobile GPU, Graphics Pipeline, Tile Based Rendering, GPU Architecture, ARM Mali, Qualcomm Adreno, Vulkan, OpenGL, DirectX, Tiled Rendering, Shader Pipeline",
+    "description": "A deep technical walkthrough of the mobile GPU rendering pipeline, comparing Adreno and Mali architectural approaches and explaining how triangles travel inside a GPU."
+  }
+  </script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background: #fafafa;
+      color: #222;
+    }
+    main {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+      background: #ffffff;
+    }
+    h1, h2, h3 {
+      line-height: 1.3;
+      font-weight: 700;
+      color: #111;
+    }
+    h2 {
+      font-size: 1.6rem;
+      margin-top: 2.2rem;
+      margin-bottom: 0.8rem;
+    }
+    h3 {
+      font-size: 1.25rem;
+      margin-top: 1.6rem;
+      margin-bottom: 0.4rem;
+    }
+    p {
+      margin: 0.4rem 0 0.9rem;
+    }
+    em { font-style: italic; }
+    strong { font-weight: 600; }
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 1.4rem auto;
+      border-radius: 8px;
+    }
+    figure {
+      margin: 1.6rem 0;
+      text-align: center;
+    }
+    figcaption {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 0.4rem;
+    }
+    ul, ol {
+      padding-left: 1.25rem;
+      margin: 0.4rem 0 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    th, td {
+      border: 1px solid #e0e0e0;
+      padding: 0.6rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f3f3f3;
+      font-weight: 600;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.9rem;
+      background: #f4f4f4;
+      padding: 0.1rem 0.3rem;
+      border-radius: 4px;
+    }
+    pre {
+      background: #111;
+      color: #f5f5f5;
+      padding: 0.9rem 1rem;
+      overflow-x: auto;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #e4e4e4;
+      margin: 2rem 0;
+    }
+    .lead {
+      font-size: 1.05rem;
+    }
+    .conclusion {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px dashed #ddd;
+    }
+    .signature {
+      margin-top: 1.5rem;
+      font-weight: 500;
+    }
+
+	.read-time {
+	  font-size: 0.9rem;
+	  color: #666;
+	  margin-top: -0.5rem;
+	  margin-bottom: 1.2rem;
+	  font-style: italic;
+	}
+    /* Typewriter title */
+    .typewriter-title {
+      font-family: "Courier New", monospace;
+      font-size: 2.2rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: 3px solid #333;
+      width: 0;
+      animation: typing 3.2s steps(40, end) forwards,
+                 blink 0.75s step-end infinite;
+      margin-bottom: 1.0rem;
+    }
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+    @keyframes blink {
+      from, to { border-color: transparent }
+      50% { border-color: #333 }
+    }
+
+    /* Tag styling */
+    .tags span {
+      display: inline-block;
+      background: #e7f0ff;
+      color: #0046a8;
+      padding: 4px 10px;
+      margin: 4px 6px 0 0;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #050608;
+        color: #f4f4f4;
+      }
+      main {
+        background: #111319;
+      }
+      h1, h2, h3 {
+        color: #ffffff;
+      }
+      table, th, td {
+        border-color: #333;
+      }
+      th {
+        background: #181b23;
+      }
+      code {
+        background: #222733;
+      }
+      pre {
+        background: #050608;
+      }
+      hr {
+        border-top-color: #333;
+      }
+      .typewriter-title {
+        border-right-color: #f4f4f4;
+      }
+      @keyframes blink {
+        from, to { border-color: transparent }
+        50% { border-color: #f4f4f4 }
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <article>
+
+      <header>
+        <h1 class="typewriter-title">How a Triangle Travels — A Mobile GPU Itinerary</h1>
+		<p class="read-time">⏱️ 18-20 min read( Close your eyes and take deep breath )</p>
+
+        <div class="tags">
+          <span>#GPU</span>
+          <span>#MobileGPU</span>
+          <span>#GraphicsPipeline</span>
+          <span>#TileBasedRendering</span>
+          <span>#Adreno</span>
+          <span>#Mali</span>
+          <span>#Vulkan</span>
+          <span>#RenderingOptimisation</span>
+        </div>
+      </header>
+
+      <p class="lead">
+        <em>Topic too clichéd? Maybe. But if you’ve spent any time in the GPU world — as a graphics programmer, hardware architect, or performance engineer — you’ll know the feeling: sooner or later, you always return to the basics of the pipeline. There’s something magical about how a humble vertex transforms into the breathtaking pixels lighting up your screen. Even after years of working on GPUs, that journey still feels like sorcery.</em>
+      </p>
+
+      <figure>
+        <img src="/assets/img/blog1/Triangle_to_Pixels.png" alt="Triangle to pixels illustration">
+        <figcaption>A triangle’s journey to pixels – the tiny magic trick every frame performs.</figcaption>
+      </figure>
+
+      <p>
+        <em>What began for me as simply memorising pipeline stages has become the foundation for every debug session, every bottleneck hunt, every architectural choice, and every rendering optimisation. And as I grew in my career, one question kept nagging me: if all mobile GPUs follow the <strong>same pipeline</strong>, why does one architecture outperform another?</em>
+      </p>
+
+      <p>
+        <em>So… drumroll please… this article won’t tell you which GPU is “better” — sorry for the clickbait 😅. Instead, I’ll walk you through the <strong>basic framework of the mobile GPU pipeline</strong>, and along the way, we’ll see how two giants — <strong>ARM Mali</strong> and <strong>Qualcomm Adreno</strong> — approach the same problems through very different lenses.</em>
+      </p>
+
+      <p>
+        <em>If you’re still with me (thank you), let’s dive into the good stuff.</em>
+      </p>
+
+      <hr>
+
+      <h2>1. How a GPU Understands Your Scene: The Core Inputs</h2>
+
+      <p>
+        The output of any great image depends on how thoughtfully the scene is constructed. A scene is made up of
+        <strong>backgrounds, objects, lights, materials, and surface details</strong>. Each of these needs information
+        at different levels of detail — geometry, colour, textures, illumination, normal maps, and many other attributes.
+      </p>
+
+      <p>But don’t get overwhelmed at the start.</p>
+
+      <p>
+        To create even a single image using a GPU, we first need to <strong>define the objects in the scene</strong>.
+        At the most fundamental level, this comes down to three key ingredients:
+      </p>
+
+      <p>
+        <strong>a. Define where things are — <em>Vertex Buffers</em></strong><br>
+        These store the positions of points (vertices) in 3D space. Together they form the skeleton or structure of
+        every object in the scene.
+      </p>
+
+      <p>
+        <strong>b. Define how things look — <em>Textures</em></strong><br>
+        Textures provide colours, patterns, roughness, normals, and other material properties that make objects appear
+        believable without increasing geometric complexity.
+      </p>
+
+      <p>
+        <strong>c. Define how things are drawn efficiently — <em>Index Buffers</em></strong><br>
+        Instead of duplicating vertices, index buffers let the GPU reuse shared vertices to form triangles. This saves
+        memory and boosts rendering performance.
+      </p>
+
+      <h3>Core Data Structures at a Glance</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Definition</th>
+            <th>Example</th>
+            <th>Benefits</th>
+            <th>Contents</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Vertex Buffer</strong></td>
+            <td>Stores vertex data (points in 3D). Provides the raw geometry that defines shapes.</td>
+            <td>Cube corners</td>
+            <td>Enables geometry that can be culled, clipped, and transformed with minimal CPU→GPU transfers.</td>
+            <td>Position, Colour, Normals, UV coordinates</td>
+          </tr>
+          <tr>
+            <td><strong>Index Buffer</strong></td>
+            <td>A list of integer references (indices) pointing into the vertex buffer to reuse vertices when forming triangles.</td>
+            <td>Square with shared corners</td>
+            <td>Reduces duplication, improves cache locality, and lowers memory usage.</td>
+            <td>List of integers</td>
+          </tr>
+          <tr>
+            <td><strong>Textures</strong></td>
+            <td>Images (2D, 3D, or procedural) mapped onto geometry. Add realism and detail without increasing geometry complexity.</td>
+            <td>Brick wall texture</td>
+            <td>Optimise rendering via compression, filtering, and mipmapping.</td>
+            <td>Diffuse/Albedo, Normal, Roughness, Displacement maps</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        Once these are in place, the GPU has enough information to start its favourite job:
+        <strong>turning triangles into pixels</strong>.
+      </p>
+
+      <h2>2. A Quick Tour of the Graphics Pipeline (GL / DX / Vulkan)</h2>
+
+      <figure>
+        <img src="/assets/img/blog1/GPU_Pipeline.png" alt="Graphics pipeline stages diagram">
+        <figcaption>A high-level view of the graphics pipeline from 3D data to 2D pixels.</figcaption>
+      </figure>
+
+      <p>
+        The GPU pipeline is the sequence of steps that transforms 3D data (vertices, buffers, textures) into the final
+        2D image displayed on your screen.
+      </p>
+
+      <p>
+        If you’re new to this whole “3D becoming 2D” idea, do yourself a favour —
+        <strong>don’t scratch your head, scratch a pixel</strong>.<br>
+        (Yes, I am absolutely pointing you to the legendary learning site <strong>Scratchapixel.com</strong>.)
+      </p>
+
+      <p>
+        The pipeline isn’t just a straight, simple conveyor belt.
+        Each stage is <strong>deeply optimised</strong>, <strong>massively parallel</strong>, and often powered
+        by <strong>specialised fixed-function hardware</strong> designed to do one thing insanely fast.
+      </p>
+
+      <p>In the diagram:</p>
+      <ul>
+        <li><strong>🟡 Yellow</strong> boxes represent <strong>fixed-function hardware</strong>.<br>
+          These stages perform highly specialised tasks (like vertex assembly, rasterisation, depth/stencil tests)
+          at incredible speed. Their behaviour is standardised and used in almost every frame, so they’re not programmable.
+        </li>
+        <li><strong>🟩 Green</strong> boxes represent <strong>programmable shaders used frequently</strong>.<br>
+          These are the workhorses — the Vertex Shader and Fragment/Pixel Shader. They run user-written code
+          millions or billions of times per frame, controlling transformations, lighting, and materials.
+        </li>
+        <li><strong>🟦 Blue</strong> boxes represent <strong>programmable shaders used less often</strong>.<br>
+          Tessellation and Geometry Shaders live here. They offer powerful capabilities (dynamic subdivision,
+          procedural geometry), but many engines skip them on mobile due to performance costs or lack of
+          native hardware support.
+        </li>
+      </ul>
+
+      <h3>Input Assembler</h3>
+      <p>Gathers vertex and index buffers and forms primitives like triangles.</p>
+      <p><strong>Fun detail:</strong><br>
+        This stage does <strong>zero math</strong>. It simply streams data from memory using dedicated fetch hardware,
+        respecting cache lines and vertex reuse. Efficient layouts (AoS vs SoA, interleaved attributes, alignment) can
+        noticeably affect bandwidth and cache behaviour.
+      </p>
+
+      <h3>Vertex Shader</h3>
+      <p>Transforms vertices into clip space and applies per-vertex operations.</p>
+      <p><strong>Fun detail:</strong><br>
+        Vertex shaders run in SIMD lanes with typically low divergence. Modern GPUs aggressively batch vertices and
+        cull invisible geometry early to avoid wasted work downstream.
+      </p>
+
+      <h3>Tessellation (Hull Shader → Tessellator → Domain Shader)</h3>
+      <p>
+        Refines or subdivides geometry surfaces on the fly (based on patch data). It consists of two programmable
+        stages (Hull, Domain) and one fixed-function stage (the Tessellator).
+      </p>
+      <p><strong>Fun detail:</strong><br>
+        Tessellation is powerful on desktop/console (for displacement mapping, smooth characters, terrain) but is
+        usually missing in hardware on mobile. When it exists, it’s often not widely used by popular mobile games.
+      </p>
+
+      <h3>Geometry Shader</h3>
+      <p>Runs <strong>per primitive</strong> and can:</p>
+      <ul>
+        <li>Expand points into quads or billboards</li>
+        <li>Create shadow volumes</li>
+        <li>Generate procedural or debug geometry</li>
+        <li>Do layered rendering to cube maps or texture arrays</li>
+      </ul>
+      <p><strong>Fun detail:</strong><br>
+        Despite its flexibility, the Geometry Shader is generally slow because it breaks the GPU’s optimal batching
+        model and increases memory traffic. Many modern engines avoid it or replace it with compute-based mesh
+        generation or <strong>Mesh Shaders</strong> (DX12/Vulkan).
+      </p>
+
+      <h3>Rasterizer</h3>
+      <p>Converts triangles into pixel-sized fragments.</p>
+      <p><strong>Fun detail:</strong><br>
+        The rasterizer uses edge equations and barycentric interpolation in fixed-function hardware. It can perform
+        early depth testing and kill large blocks of fragments before they reach the pixel shader — saving huge
+        amounts of work.
+      </p>
+
+      <h3>Pixel (Fragment) Shader</h3>
+      <p>Runs <strong>per fragment</strong>, doing shading, texture sampling, lighting, BRDF evaluation, etc.</p>
+      <p><strong>Fun detail:</strong><br>
+        This is the <strong>most expensive stage</strong> on most GPUs. Heavy texture access, complex material graphs,
+        divergent branches, and overdraw can tank performance. Fragments are usually processed in 2×2
+        <strong>quads</strong> so derivatives (for mipmaps, etc.) can be computed cheaply.
+      </p>
+
+      <h3>Output Merger</h3>
+      <p>
+        Performs depth/stencil tests, blending, MSAA resolves, and writes final colour values to the render target.
+      </p>
+      <p><strong>Fun detail:</strong><br>
+        Blending is still fixed-function and highly optimised for contiguous memory writes. Modern hardware can combine
+        multiple fragment results before hitting memory, but unordered or random writes can still thrash the ROPs
+        (Raster Operations Pipeline).
+      </p>
+
+      <p>
+        The final pixel values are written to the framebuffer — and a few milliseconds later, the display scans them
+        out to your screen.
+      </p>
+
+      <h3>OpenGL vs DirectX Names (Cheat Sheet)</h3>
+
+      <pre><code># OpenGL vs DirectX Pipeline Stage Names
+
+| Pipeline Stage                  | OpenGL Name                                           | DirectX (DX11/DX12) Name          |
+| --------------------------------| ------------------------------------------------------ | --------------------------------- |
+| Vertex Input                    | Vertex Specification (VAO / VBO / glVertexAttribPointer) | Input Assembler (IA)           |
+| Vertex Shader                   | Vertex Shader (GLSL VS)                               | Vertex Shader (VS)                |
+| Tessellation Control            | Tessellation Control Shader (TCS)                     | Hull Shader (HS)                  |
+| Tessellator (Fixed Function)    | Tessellator                                           | Tessellator                       |
+| Tessellation Evaluation         | Tessellation Evaluation Shader (TES)                  | Domain Shader (DS)                |
+| Geometry Shader                 | Geometry Shader (GS)                                  | Geometry Shader (GS)              |
+| Clipping & Projection           | Clipping + Perspective Divide (Fixed)                 | Clipping + Viewport Transform     |
+| Rasterisation                   | Rasterizer                                            | Rasterizer Stage                  |
+| Fragment / Pixel Shader         | Fragment Shader (FS)                                  | Pixel Shader (PS)                 |
+| Depth / Stencil / Blend         | Per-Fragment Operations                               | Output Merger (OM)                |
+| Render Output                   | Framebuffer                                           | Render Targets (RTV/DSV)          |</code></pre>
+
+      <h2>3. Rendering in Mobile GPUs</h2>
+
+      <p>
+        Before comparing how <strong>mobile GPU hardware</strong> works, we need to reveal the not-so-secret sauce
+        behind almost every modern mobile GPU:
+      </p>
+
+      <p>
+        They <strong>almost never</strong> use classic <strong>Immediate Mode Rendering (IMR)</strong> — the pipeline
+        mental model many of us learnt from desktop GPUs.
+      </p>
+
+      <p>Instead, mobile GPUs lean heavily on <strong>Tile-Based Rendering (TBR)</strong>.</p>
+
+      <p>Why? Because the hardware budgets are radically different.</p>
+
+      <ul>
+        <li><strong>Desktop GPUs</strong><br>
+          Memory: <strong>GDDR6 / GDDR6X / GDDR7</strong><br>
+          Bandwidth: <strong>500–1500 GB/s+</strong><br>
+          Power: <strong>300–400 W</strong> GPU budget
+        </li>
+        <li><strong>Mobile GPUs</strong><br>
+          Memory: <strong>LPDDR4 / LPDDR5</strong><br>
+          Bandwidth: ~<strong>30–60 GB/s</strong><br>
+          Power: <strong>2–5 W</strong> for the entire SoC GPU
+        </li>
+      </ul>
+
+      <p>
+        With that kind of bandwidth and power gap, taking a naïve desktop-style IMR pipeline and dropping it into a
+        phone would be catastrophic.
+      </p>
+
+      <p>
+        In a traditional <strong>IMR</strong> pipeline, every triangle and fragment typically involves:
+      </p>
+
+      <ul>
+        <li>Multiple <strong>framebuffer reads/writes</strong></li>
+        <li><strong>Depth</strong> operations going to/from DRAM</li>
+        <li><strong>Blending</strong> operations going to/from DRAM</li>
+      </ul>
+
+      <p>
+        On a 400 W desktop card, this is manageable.<br>
+        On a 3 W mobile GPU, it <strong>kills</strong> performance and thermals.
+      </p>
+
+      <h3>Why Tile-Based Rendering Wins on Mobile</h3>
+
+      <p>
+        Tile-Based Rendering reorganises the pipeline around <strong>locality</strong> and
+        <strong>on-chip memory</strong>:
+      </p>
+
+      <ul>
+        <li>The screen is divided into <strong>tiles/bins</strong>, and triangles touching each tile are collected.</li>
+        <li>Each tile is processed entirely inside an <strong>on-chip tile buffer (SRAM)</strong>.</li>
+        <li>Only the <strong>final resolved tile</strong> is written out to DRAM.</li>
+      </ul>
+
+      <p>Fewer DRAM accesses → less bandwidth → less heat → more sustained FPS.</p>
+
+      <p>This strategy makes sense for mobile because it:</p>
+      <ul>
+        <li>Can cut bandwidth by <strong>50% or more</strong></li>
+        <li>Dramatically reduces power consumption</li>
+        <li>Makes <strong>MSAA</strong> much cheaper, since samples stay on-chip</li>
+        <li>Fits within the strict <strong>2–5 W</strong> power envelope</li>
+      </ul>
+
+      <h3>Variants of Tile-Based Rendering</h3>
+
+      <p>Different vendors implement tiling differently:</p>
+
+      <ul>
+        <li><strong>Fully Tiled</strong><br>
+          <em>ARM Mali (Bifrost, Valhall), Apple GPUs, PowerVR</em><br>
+          Almost everything goes through the tiler and on-chip buffers.
+        </li>
+        <li><strong>Hybrid Tiling (TBDR: Tile-Based Deferred Rendering)</strong><br>
+          <em>Qualcomm Adreno</em><br>
+          Uses tile binning + partial immediate-mode behaviour where needed.<br>
+          And yes, it sounds suspiciously like <strong>TL;DR</strong> — which better not happen to this article 😄.
+        </li>
+      </ul>
+
+      <h2>Why Tiling Changes Everything</h2>
+
+      <p>
+        This is why I’m stressing Tile-Based Rendering <strong>before</strong> jumping into the detailed pipeline.
+        It’s not just a nice optimisation; <strong>it fundamentally reshapes mobile GPU architecture</strong>.
+      </p>
+
+      <p>
+        Because we must save bandwidth and keep as much work on-chip as possible, the GPU needs to avoid processing
+        geometry or fragments that won’t contribute to the final image. This leads to a
+        <strong>two-pass strategy</strong>:
+      </p>
+
+      <h3>1. Binning Pass</h3>
+      <p>
+        The screen is divided into small tiles. The GPU determines <strong>which triangles touch which tile</strong>,
+        performing a coarse visibility classification. Only the geometry relevant to each tile is queued for further
+        processing.
+      </p>
+
+      <h3>2. Rendering Pass</h3>
+      <p>
+        For each tile, only the <strong>actually visible</strong> triangles enter rasterisation. Depth tests, blending,
+        MSAA, and colour writes all happen inside the <strong>on-chip tile buffer</strong>. Only the final resolved tile
+        is written to DRAM.
+      </p>
+
+      <p>This architectural strategy drives a whole ecosystem of hardware choices:</p>
+
+      <ul>
+        <li>Dedicated <strong>visibility hardware</strong> for binning</li>
+        <li><strong>Concurrent</strong> binning and rendering passes</li>
+        <li>Complex <strong>resource balancing</strong> between tiler, shader cores, texture units, and memory controllers</li>
+        <li>Efficient <strong>tile stitching</strong> to compose the final framebuffer</li>
+        <li>Dynamic choices for <strong>tile size</strong> and tile memory usage</li>
+        <li>Special on-chip structures: tile caches, hidden surface removal buffers, local storage/shared memory</li>
+      </ul>
+
+      <p>
+        These aren’t minor tweaks — they make mobile GPUs a <strong>different species</strong> compared to traditional
+        desktop GPUs.
+      </p>
+
+      <p>
+        Tile-Based Rendering is therefore not just an optimisation;<br>
+        it’s <strong>the reason</strong> mobile GPUs can exist within a 2–5 W thermal envelope while still pushing
+        console-like visuals.
+      </p>
+
+      <figure>
+        <img src="/assets/img/blog1/BinningTriangle.png" alt="Example of tile binning and triangle visibility">
+        <figcaption>A naïve example showing how binning keeps only the triangles relevant to each tile.</figcaption>
+      </figure>
+
+      <figure>
+        <img src="/assets/img/blog1/ImmediatevsTIledRendering.png" alt="Comparison of tiled vs immediate rendering">
+        <figcaption>Another illustration comparing how tiled and immediate modes behave for the same scene.</figcaption>
+      </figure>
+
+      <div class="conclusion">
+        <h2>Conclusion</h2>
+
+        <p>So… this feels like a good place to end my first blog everrrrrrrrrrrr :) ( Sorry got excited ... Ctrl Ctrl Uday ) .</p>
+
+        <p>
+          Now you understand <strong>why</strong> I spent so much time talking about Tile-Based Rendering before even
+          touching “How does the triangle actually move inside ARM vs Qualcomm?”.
+        </p>
+
+        <p>
+          If you don’t first appreciate <em>why</em> mobile GPUs are built the way they are, then explaining
+          <em>how</em> triangles move through them makes no sense. The hardware is different because the
+          <strong>constraints</strong> are different — and that single fact shapes everything else.
+        </p>
+
+        <p>
+          <strong>Yes, I did slightly clickbait you with the promise of ARM vs Qualcomm pipelines (guilty).</strong><br>
+          But don’t worry — I haven’t forgotten the real question you came here for:
+        </p>
+
+        <blockquote>
+          <p><strong>“How does a triangle actually travel inside a mobile GPU?”</strong></p>
+        </blockquote>
+
+        <p>That is coming next.</p>
+
+        <figure>
+          <img src="/assets/img/blog1/Next_Episode.png" alt="Next episode teaser poster">
+          <figcaption>Part 2 teaser – where the real architectural carnage begins.</figcaption>
+        </figure>
+
+        <p>
+          And just like my favourite Bollywood saga — <em>Gangs of Wasseypur Part 2</em> — I’m saving the real carnage,
+          drama, and architectural twists for <strong>Part 2</strong>.
+        </p>
+
+        <p>
+          In the next chapter, I’ll break down how two giants of mobile graphics —<br>
+          <strong>Qualcomm Adreno</strong> and <strong>ARM Mali</strong> —<br>
+          take completely different approaches to the same fundamental question.
+        </p>
+
+        <p>
+          Can it be a blockbuster of a deep dive into their architectures?<br>
+          We’ll see. 😉
+        </p>
+
+        <p class="signature">
+          Keep TRYing, stay WELL, and keep deBUGing.
+        </p>
+      </div>
+
+    </article>
+  </main>
+</body>
+</html>
