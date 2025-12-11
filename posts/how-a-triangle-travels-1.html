@@ -154,6 +154,17 @@
 	  margin-bottom: 1.2rem;
 	  font-style: italic;
 	}
+	.back-home {
+	  display: inline-block;
+	  margin: 10px 0 20px;
+	  font-size: 0.9rem;
+	  color: #0066cc;
+	  text-decoration: none;
+	}
+	.back-home:hover {
+	  text-decoration: underline;
+	}
+
     /* Typewriter title */
     .typewriter-title {
       font-family: "Courier New", monospace;
@@ -216,6 +227,27 @@
       .typewriter-title {
         border-right-color: #f4f4f4;
       }
+		.title-block {
+		  margin-bottom: 1.5rem;
+		}
+
+		.title-block h1 {
+		  font-size: 2.4rem;
+		  font-weight: 800;
+		  margin: 0;
+		}
+
+		.title-block h2 {
+		  font-size: 1.4rem;
+		  font-weight: 400;
+		  margin-top: 5px;
+		  color: #444;
+		}
+
+		.subtitle {
+		  opacity: 0.85;
+		}
+
       @keyframes blink {
         from, to { border-color: transparent }
         50% { border-color: #f4f4f4 }
@@ -229,7 +261,11 @@
     <article>
 
       <header>
-        <h1 class="typewriter-title">How a Triangle Travels — A Mobile GPU Itinerary</h1>
+		<a href="../index.html" class="back-home">← Back to Home</a>
+		<div class="title-block">
+		  <h1 class="typewriter-line" data-text="How a Triangle Travels"></h1>
+		  <h2 class="typewriter-line subtitle" data-text="A Mobile GPU Itinerary"></h2>
+		</div>
 		<p class="read-time">⏱️ 18-20 min read( Close your eyes and take deep breath )</p>
 
         <div class="tags">
