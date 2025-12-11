@@ -397,7 +397,7 @@
 -------------------------------------------- */
 async function loadPosts() {
   try {
-    const res = await fetch('/posts/posts.json');
+    const res = await fetch('posts/posts.json');
     const posts = await res.json();
 
     // Sort newest → oldest
@@ -410,7 +410,7 @@ async function loadPosts() {
       card.className = 'post-card';
 
       card.innerHTML = `
-        <a href="/posts/${post.file}">
+        <a href="posts/${post.file}">
           <h3>${post.title}</h3>
           <p>${post.description}</p>
           <span class="post-date">${new Date(post.date).toDateString()} • ${post.read}</span>
