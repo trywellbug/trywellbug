@@ -150,10 +150,26 @@
 	.read-time {
 	  font-size: 0.9rem;
 	  color: #666;
-	  margin-top: -0.5rem;
-	  margin-bottom: 1.2rem;
+	  margin: -0.2rem 0 1.4rem;
 	  font-style: italic;
 	}
+	.blog-title-block {
+	  margin-bottom: 1.8rem;
+	}
+	
+	.blog-main-title {
+	  font-size: 2.4rem;
+	  font-weight: 800;
+	  margin: 0;
+	}
+	
+	.blog-sub-title {
+	  font-size: 1.3rem;
+	  font-weight: 400;
+	  margin: 6px 0 0;
+	  opacity: 0.9;
+	}
+
 	.back-home {
 	  display: inline-block;
 	  margin: 10px 0 20px;
@@ -262,11 +278,15 @@
 
       <header>
 		<a href="../index.html" class="back-home">← Back to Home</a>
-		<div class="title-block">
-		  <h1 class="typewriter-line" data-text="How a Triangle Travels"></h1>
-		  <h2 class="typewriter-line subtitle" data-text="A Mobile GPU Itinerary"></h2>
+		<div class="blog-title-block">
+		  <h1 class="typewriter-line blog-main-title"
+		      data-text="How a Triangle Travels"></h1>
+		
+		  <h2 class="typewriter-line blog-sub-title"
+		      data-text="A Mobile GPU Itinerary"></h2>
 		</div>
-		<p class="read-time">⏱️ 18-20 min read( Close your eyes and take deep breath )</p>
+
+		<p class="read-time">⏱️ 18-20 min read(It will just take a minute)</p>
 
         <div class="tags">
           <span>#GPU</span>
