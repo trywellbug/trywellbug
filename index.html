@@ -5,6 +5,35 @@
   <title>TryWellBug – Ankit Singh</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+	  .post-card {
+		  padding: 15px 20px;
+		  border: 1px solid #ddd;
+		  border-radius: 8px;
+		  margin-bottom: 15px;
+		  background: #fff;
+		  transition: 0.2s;
+		}
+
+	.post-card:hover {
+		  background: #f5f8ff;
+		  transform: translateY(-2px);
+		}
+
+	.post-card h3 {
+		  margin: 0;
+		  font-size: 1.2rem;
+		}
+
+	.post-card p {
+		  margin: 6px 0 8px;
+		  color: #555;
+		}
+
+	.post-card .post-date {
+		  font-size: 0.85rem;
+		  color: #888;
+		}
+
     :root {
       --bg: #fdfdfd;
       --accent: #2563eb;
@@ -268,42 +297,7 @@
       <!-- LEFT COLUMN: BLOG -->
       <section id="blog">
         <h2 class="section-title">Latest posts</h2>
-
-        <!-- Example Blog Post 1 -->
-        <article class="card">
-          <div class="card-header">
-            <div>
-              <h3 class="card-title">Launching TryWellBug</h3>
-            </div>
-            <div class="card-meta">Nov 30, 2025 · 3 min read</div>
-          </div>
-          <p class="card-body">
-            Why I created TryWellBug and how travel, trying new things, staying well, and debugging life all ended up under one name.
-          </p>
-          <div class="tag-row">
-            <span class="tag">Intro</span>
-            <span class="tag">Personal</span>
-          </div>
-          <a href="#" class="blog-link">Read post</a>
-        </article>
-
-        <!-- Example Blog Post 2 -->
-        <article class="card">
-          <div class="card-header">
-            <div>
-              <h3 class="card-title">Comparision of Life of a Pixel in AMD / ARM / Qualcomm ( Mobile Devices ) </h3>
-            </div>
-            <div class="card-meta">Jan 5, 2026 · 4 min read</div>
-          </div>
-          <p class="card-body">
-            Lets how each company shaped their GPUs and rendered the final pixel .
-          </p>
-          <div class="tag-row">
-            <span class="tag">Graphics</span>
-            <span class="tag">Comparision</span>
-          </div>
-          <a href="#" class="blog-link">Read post</a>
-        </article>
+			<div id="latest-posts"></div>
       </section>
 
       <!-- RIGHT COLUMN: MINIMAL RESUME -->
@@ -367,36 +361,76 @@
   </div>
 
   <script>
-    // Multi-line typewriter effect
-    (function () {
-      const lines = document.querySelectorAll(".typewriter-line");
+/* -------------------------------------------
+   MULTI-LINE TYPEWRITER EFFECT (existing code)
+-------------------------------------------- */
+(function () {
+  const lines = document.querySelectorAll(".typewriter-line");
 
-      function runTypewriter(el, delayStart = 0) {
-        const text = el.getAttribute("data-text") || "";
-        let i = 0;
-        el.textContent = "";
+  function runTypewriter(el, delayStart = 0) {
+    const text = el.getAttribute("data-text") || "";
+    let i = 0;
+    el.textContent = "";
 
-        function typing() {
-          if (i <= text.length) {
-            el.textContent = text.slice(0, i);
-            i++;
-            const delay = 50 + Math.random() * 70; // irregular, like a real typewriter
-            setTimeout(typing, delay);
-          }
-        }
-        setTimeout(typing, delayStart);
+    function typing() {
+      if (i <= text.length) {
+        el.textContent = text.slice(0, i);
+        i++;
+        const delay = 50 + Math.random() * 70; // irregular, like a real typewriter
+        setTimeout(typing, delay);
       }
+    }
+    setTimeout(typing, delayStart);
+  }
 
-      let delay = 500;
-      lines.forEach(line => {
-        runTypewriter(line, delay);
-        const len = (line.getAttribute("data-text") || "").length;
-        delay += len * 55;
-      });
-    })();
+  let delay = 500;
+  lines.forEach(line => {
+    runTypewriter(line, delay);
+    const len = (line.getAttribute("data-text") || "").length;
+    delay += len * 55;
+  });
+})();
 
-    // Set current year in footer
-    document.getElementById("year").textContent = new Date().getFullYear();
+/* -------------------------------------------
+   AUTO-DETECT POSTS SCRIPT
+   Loads /posts/posts.json and builds the blog list
+-------------------------------------------- */
+async function loadPosts() {
+  try {
+    const res = await fetch('/posts/posts.json');
+    const posts = await res.json();
+
+    // Sort newest → oldest
+    posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const container = document.getElementById('latest-posts');
+
+    posts.forEach(post => {
+      const card = document.createElement('div');
+      card.className = 'post-card';
+
+      card.innerHTML = `
+        <a href="/posts/${post.file}">
+          <h3>${post.title}</h3>
+          <p>${post.description}</p>
+          <span class="post-date">${new Date(post.date).toDateString()} • ${post.read}</span>
+        </a>
+      `;
+
+      container.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error("Error loading posts:", err);
+  }
+}
+
+loadPosts();
+
+/* -------------------------------------------
+   SET CURRENT YEAR IN FOOTER (existing code)
+-------------------------------------------- */
+document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
