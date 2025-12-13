@@ -263,6 +263,24 @@
 		.subtitle {
 		  opacity: 0.85;
 		}
+		
+		.blog-meta-icons {
+		  font-size: 0.92rem;
+		  color: #555;
+		  margin-top: -0.4rem;
+		  margin-bottom: 0.8rem;
+		  display: flex;
+		  align-items: center;
+		  gap: 14px;
+		  flex-wrap: wrap;
+		}
+		
+		.blog-meta-icons span {
+		  display: inline-flex;
+		  align-items: center;
+		  gap: 4px;
+		  white-space: nowrap;
+		}
 
       @keyframes blink {
         from, to { border-color: transparent }
@@ -288,13 +306,12 @@
 		      data-text="ARM Mali vs Qualcomm Adreno comparision"></h2>
 		</div>
 
-		<div class="blog-meta">
-		  <span class="author">By Ankit Singh</span>
-		  <span class="dot">•</span>
-		  <span class="published-date">Published: 11th Dec 2025</span>
-		  <span class="dot">•</span>
-		  <span class="updated-date">Updated: 13th Dec 2025</span>
+		<div class="blog-meta-icons">
+		  <span>👤 Ankit Singh ( Senior Enginner - GPU Research ) </span>
+		  <span>📅 Published: 10th Dec 2025</span>
+		  <span>🔄 Updated: 13th Dec 2025</span>
 		</div>
+
 
 		<p class="read-time">⏱️ 9-10 min read(It will just take a minute)</p>
 
@@ -793,6 +810,11 @@
       delay += len * 55;
     });
   })();
+  const updated = document.querySelector(".blog-meta-icons span:nth-child(3)");
+  updated.textContent = "🔄 Updated: " + new Date(document.lastModified)
+    .toLocaleDateString("en-GB", {
+      year: "numeric", month: "short", day: "numeric"
+    });
   </script>
 </body>
 </html>
