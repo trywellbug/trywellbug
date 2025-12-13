@@ -1,9 +1,9 @@
 [
   {
-    "title": "How a Triangle Travels — A Mobile GPU Itinerary",
+    "title": "How a Triangle Travels — A Mobile GPU Itinerary (ARM Mali vs Qualcomm Adreno comparision)",
     "file": "how-a-triangle-travels-1.html",
     "description": "A deep dive into the mobile GPU pipeline, tile-based rendering, and ARM Mali vs Qualcomm Adreno.",
     "date": "2025-12-10",
-    "read": "18 min read"
+    "read": "10 min read"
   }
 ]
