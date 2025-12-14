@@ -427,16 +427,17 @@
 
       <h2>2. A Quick Tour of the Graphics Pipeline (GL / DX / Vulkan)</h2>
 
-      <figure>
-        <img src="../assets/img/blog1/GPU_Pipeline.png" alt="Graphics pipeline stages diagram">
-        <figcaption>A high-level view of the graphics pipeline from 3D data to 2D pixels.</figcaption>
-      </figure>
 
       <p>
         The GPU pipeline is the sequence of steps that transforms 3D data (vertices, buffers, textures) into the final
         2D image displayed on your screen.
       </p>
 
+      <figure>
+        <img src="../assets/img/blog1/3D_model_to_2D_Pipeline.png" alt="3D to 2D stages">
+        <figcaption>Transforming 3D into 2D data</figcaption>
+	  </figure>
+		
       <p>
         If you’re new to this whole “3D becoming 2D” idea, do yourself a favour —
         <strong>don’t scratch your head, scratch a pixel</strong>.<br>
@@ -466,6 +467,11 @@
         </li>
       </ul>
 
+      <figure>
+        <img src="../assets/img/blog1/GPU_Pipeline.png" alt="Graphics pipeline stages diagram">
+        <figcaption>A high-level view of the graphics pipeline from 3D data to 2D pixels.</figcaption>
+	  </figure>
+		
       <h3>Input Assembler</h3>
       <p>Gathers vertex and index buffers and forms primitives like triangles.</p>
       <p><strong>Fun detail:</strong><br>
@@ -475,12 +481,17 @@
       </p>
 
       <h3>Vertex Shader</h3>
-      <p>Transforms vertices into clip space and applies per-vertex operations.</p>
+      <p>Transforms vertices ( scale/rotation/..) into clip space and applies per-vertex operations.</p>
       <p><strong>Fun detail:</strong><br>
         Vertex shaders run in SIMD lanes with typically low divergence. Modern GPUs aggressively batch vertices and
         cull invisible geometry early to avoid wasted work downstream.
       </p>
 
+      <figure>
+        <img src="../assets/img/blog1/Vertex_Shader.png" alt="Vertex Shader diagram">
+        <figcaption>Vertex Shader</figcaption>
+	  </figure>
+		
       <h3>Tessellation (Hull Shader → Tessellator → Domain Shader)</h3>
       <p>
         Refines or subdivides geometry surfaces on the fly (based on patch data). It consists of two programmable
@@ -490,7 +501,12 @@
         Tessellation is powerful on desktop/console (for displacement mapping, smooth characters, terrain) but is
         usually missing in hardware on mobile. When it exists, it’s often not widely used by popular mobile games.
       </p>
-
+		
+      <figure>
+        <img src="../assets/img/blog1/Tesellation_Shader.png" alt="Tessellation Shader diagram">
+        <figcaption>Tessellation Shader</figcaption>
+	  </figure>
+		
       <h3>Geometry Shader</h3>
       <p>Runs <strong>per primitive</strong> and can:</p>
       <ul>
@@ -505,8 +521,13 @@
         generation or <strong>Mesh Shaders</strong> (DX12/Vulkan).
       </p>
 
+      <figure>
+        <img src="../assets/img/blog1/Geometry_Shader.png" alt="Geometry Shader diagram">
+        <figcaption>Geometry Shader</figcaption>
+	  </figure>
+		
       <h3>Rasterizer</h3>
-      <p>Converts triangles into pixel-sized fragments.</p>
+      <p>Converts triangles into pixel-sized fragments.Geometry finally stops being math and starts becoming pixels.</p>
       <p><strong>Fun detail:</strong><br>
         The rasterizer uses edge equations and barycentric interpolation in fixed-function hardware. It can perform
         early depth testing and kill large blocks of fragments before they reach the pixel shader — saving huge
@@ -521,6 +542,10 @@
         <strong>quads</strong> so derivatives (for mipmaps, etc.) can be computed cheaply.
       </p>
 
+      <figure>
+        <img src="../assets/img/blog1/Pixel_Shader.png" alt="Pixel Shader diagram">
+        <figcaption>Pixel/Fragment Shader</figcaption>
+	  </figure>
       <h3>Output Merger</h3>
       <p>
         Performs depth/stencil tests, blending, MSAA resolves, and writes final colour values to the render target.
