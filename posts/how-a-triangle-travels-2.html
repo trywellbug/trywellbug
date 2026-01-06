@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- ✅ Blog 2 Title -->
+  <title>How a Triangle Travels — A Mobile GPU Hardware Pipeline with ARM vs Qualcomm comparision</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- 🔍 SEO Description (Blog 2: hardware pipeline focus) -->
+  <meta name="description" content="Part 2 of How a Triangle Travels: a hardware-focused walkthrough of the mobile GPU pipeline, mapping key blocks and comparing how ARM Mali and Qualcomm Adreno approach tiling, depth, compression, texture sampling, and blending.">
+
+  <!-- 🔍 SEO Keywords -->
+  <meta name="keywords" content="GPU, Mobile GPU, Hardware Pipeline, Tile Based Rendering, GPU Architecture, ARM Mali, Qualcomm Adreno, Vulkan, OpenGL, DirectX, Tiler, Rasterizer, Early Z, Late Z, AFBC, UBWC, Texture Units, Render Backend, LRZ, Bandwidth, Power Efficiency">
+
+  <!-- 🟦 Open Graph -->
+  <meta property="og:title" content="How a Triangle Travels — A Mobile GPU Hardware Pipeline with ARM vs Qualcomm comparision">
+  <meta property="og:description" content="Part 2: a hardware-focused journey through the mobile GPU pipeline, mapping blocks and comparing Mali vs Adreno philosophies.">
+  <meta property="og:type" content="article">
+  <!-- ✅ Change image when you pick Blog 2 hero image -->
+  <meta property="og:image" content="https://trywellbug.github.io/trywellbug/assets/img/blog2/hero.png">
+  <!-- ✅ Change URL to your actual Blog 2 URL -->
+  <meta property="og:url" content="https://trywellbug.github.io/trywellbug/posts/how-a-triangle-travels-2.html">
+  <meta property="og:site_name" content="TryWellBug">
+
+  <!-- 🐦 Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="How a Triangle Travels — A Mobile GPU Hardware Pipeline with ARM vs Qualcomm comparision">
+  <meta name="twitter:description" content="Part 2: hardware blocks, tiling, depth, compression, and the Mali vs Adreno design trade-offs for perf/W.">
+  <meta name="twitter:image" content="https://trywellbug.github.io/trywellbug/assets/img/blog2/hero.png">
+
+  <!-- 📚 JSON-LD Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "How a Triangle Travels — A Mobile GPU Hardware Pipeline with ARM vs Qualcomm comparision",
+    "author": { "@type": "Person", "name": "Ankit Singh" },
+    "image": "https://trywellbug.github.io/trywellbug/assets/img/blog2/hero.png",
+    "url": "https://trywellbug.github.io/trywellbug/posts/how-a-triangle-travels-2.html",
+    "keywords": "GPU, Mobile GPU, Hardware Pipeline, Tile Based Rendering, GPU Architecture, ARM Mali, Qualcomm Adreno, Tiler, Rasterizer, Early Z, Late Z, AFBC, UBWC",
+    "description": "Part 2: a hardware-focused walkthrough of the mobile GPU pipeline, mapping key blocks and comparing ARM Mali vs Qualcomm Adreno approaches."
+  }
+  </script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background: #fafafa;
+      color: #222;
+    }
+    main {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+      background: #ffffff;
+    }
+    h1, h2, h3 {
+      line-height: 1.3;
+      font-weight: 700;
+      color: #111;
+    }
+    h2 {
+      font-size: 1.6rem;
+      margin-top: 2.2rem;
+      margin-bottom: 0.8rem;
+    }
+    h3 {
+      font-size: 1.25rem;
+      margin-top: 1.6rem;
+      margin-bottom: 0.4rem;
+    }
+    p {
+      margin: 0.4rem 0 0.9rem;
+    }
+    em { font-style: italic; }
+    strong { font-weight: 600; }
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 1.4rem auto;
+      border-radius: 8px;
+    }
+    figure {
+      margin: 1.6rem 0;
+      text-align: center;
+    }
+    figcaption {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 0.4rem;
+    }
+    ul, ol {
+      padding-left: 1.25rem;
+      margin: 0.4rem 0 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    th, td {
+      border: 1px solid #e0e0e0;
+      padding: 0.6rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f3f3f3;
+      font-weight: 600;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.9rem;
+      background: #f4f4f4;
+      padding: 0.1rem 0.3rem;
+      border-radius: 4px;
+    }
+    pre {
+      background: #111;
+      color: #f5f5f5;
+      padding: 0.9rem 1rem;
+      overflow-x: auto;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #e4e4e4;
+      margin: 2rem 0;
+    }
+    .lead {
+      font-size: 1.05rem;
+    }
+    .conclusion {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px dashed #ddd;
+    }
+    .signature {
+      margin-top: 1.5rem;
+      font-weight: 500;
+    }
+
+    .read-time {
+      font-size: 0.9rem;
+      color: #666;
+      margin: -0.2rem 0 1.4rem;
+      font-style: italic;
+    }
+    .blog-title-block {
+      margin-bottom: 1.8rem;
+    }
+
+    .blog-main-title {
+      font-size: 2.4rem;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .blog-sub-title {
+      font-size: 1.3rem;
+      font-weight: 400;
+      margin: 6px 0 0;
+      opacity: 0.9;
+    }
+
+    .back-home {
+      display: inline-block;
+      margin: 10px 0 20px;
+      font-size: 0.9rem;
+      color: #0066cc;
+      text-decoration: none;
+    }
+    .back-home:hover {
+      text-decoration: underline;
+    }
+
+    /* Typewriter title */
+    .typewriter-title {
+      font-family: "Courier New", monospace;
+      font-size: 2.2rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: 3px solid #333;
+      width: 0;
+      animation: typing 3.2s steps(40, end) forwards,
+                 blink 0.75s step-end infinite;
+      margin-bottom: 1.0rem;
+    }
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+    @keyframes blink {
+      from, to { border-color: transparent }
+      50% { border-color: #333 }
+    }
+
+    /* Tag styling */
+    .tags span {
+      display: inline-block;
+      background: #e7f0ff;
+      color: #0046a8;
+      padding: 4px 10px;
+      margin: 4px 6px 0 0;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #050608;
+        color: #f4f4f4;
+      }
+      main {
+        background: #111319;
+      }
+      h1, h2, h3 {
+        color: #ffffff;
+      }
+      table, th, td {
+        border-color: #333;
+      }
+      th {
+        background: #181b23;
+      }
+      code {
+        background: #222733;
+      }
+      pre {
+        background: #050608;
+      }
+      hr {
+        border-top-color: #333;
+      }
+      .typewriter-title {
+        border-right-color: #f4f4f4;
+      }
+      @keyframes blink {
+        from, to { border-color: transparent }
+        50% { border-color: #f4f4f4 }
+      }
+      .blog-meta-icons {
+        font-size: 0.92rem;
+        color: #cbd5e1;
+        margin-top: -0.4rem;
+        margin-bottom: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .blog-meta-icons span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+    }
+
+    /* ✅ Bottom-left watermark like you asked for images previously */
+    .watermark {
+      position: fixed;
+      left: 12px;
+      bottom: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      color: rgba(15, 23, 42, 0.55);
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 999px;
+      padding: 6px 10px;
+      backdrop-filter: blur(6px);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .watermark {
+        color: rgba(241, 245, 249, 0.55);
+        background: rgba(17, 19, 25, 0.65);
+        border-color: rgba(51, 65, 85, 0.9);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <article>
+
+      <header>
+        <a href="../index.html" class="back-home">← Back to Home</a>
+
+        <div class="blog-title-block">
+          <h1 class="typewriter-line blog-main-title"
+              data-text="How a Triangle Travels"></h1>
+
+          <h2 class="typewriter-line blog-sub-title"
+              data-text="A Mobile GPU Hardware Pipeline"></h2>
+
+          <h3 class="typewriter-line blog-sub-title"
+              data-text="ARM Mali vs Qualcomm Adreno comparision"></h3>
+        </div>
+
+        <div class="blog-meta-icons">
+          <span>👤 Ankit Singh ( Senior Engineer - GPU Research )</span>
+          <!-- ✅ Update these dates for Blog 2 -->
+          <span>📅 Published: TBD</span>
+          <span>🔄 Updated: TBD</span>
+        </div>
+
+        <p class="read-time">⏱️ TBD min read</p>
+
+        <div class="tags">
+          <span>#GPU</span>
+          <span>#MobileGPU</span>
+          <span>#HardwarePipeline</span>
+          <span>#TileBasedRendering</span>
+          <span>#Adreno</span>
+          <span>#Mali</span>
+          <span>#AFBC</span>
+          <span>#UBWC</span>
+          <span>#Vulkan</span>
+        </div>
+      </header>
+
+
+
+    <p class="lead">
+      <em>
+        Hope you’re all having a lovely holiday season ❄️. I wish you will do amazing things in coming revolution of the sun.
+        Cold weather is perfect for getting cosy with a long read — or, worst case, reading my article and dozing off immediately 😄.
+      </em>
+    </p>
+    
+    <p>
+      The topic might be a bit specific (or boring to some!), but I’m genuinely grateful for the encouragement and appreciation you showed for my first article.
+      <br>
+      Thank you for the support — it really means a lot.
+    </p>
+    
+    <h2>TL;DR</h2>
+    
+    <figure>
+      <img src="../assets/img/blog2/TLDR_2.png" alt="TL;DR summary graphic for Blog 2">
+      <figcaption>A quick one-screen summary before we dive in.</figcaption>
+    </figure>
+    
+    <h2>Quick recap of Part 1 — in 5 points</h2>
+    
+    <ol>
+      <li>
+        <strong>What a GPU actually consumes</strong>: rendering starts with a small but powerful set of inputs —
+        <strong>vertex buffers</strong> for structure, <strong>index buffers</strong> for efficiency, and <strong>textures</strong> for visual richness.
+      </li>
+      <li>
+        <strong>How 3D becomes 2D</strong>: scene data flows through the graphics pipeline, where vertices are transformed,
+        primitives are rasterized, and fragments eventually become pixels.
+      </li>
+      <li>
+        <strong>Pipeline anatomy matters</strong>: modern graphics APIs combine <strong>fixed-function hardware</strong> for speed
+        with <strong>programmable shaders</strong> for flexibility — each stage exists for a reason.
+      </li>
+      <li>
+        <strong>Mobile GPUs live under brutal constraints</strong>: limited power and memory bandwidth force them to move away from
+        desktop-style <strong>Immediate Mode Rendering</strong>.
+      </li>
+      <li>
+        <strong>Tile-Based Rendering isn’t an optimisation</strong>: it is the architectural foundation that makes mobile GPUs possible
+        in your hand without colling fan (ya I know phones are releasing with cooling fan these days, Honor WIN).
+      </li>
+      <li>
+        <strong>Binning and on-chip tile processing change everything</strong>: by drastically reducing memory traffic, mobile GPUs can deliver
+        sustained performance within a <strong>2–5 W power envelope</strong>.
+      </li>
+    </ol>
+    
+    <p><em>(…okay fine, it was 6 points. GPUs love over-subdivision anyway : ) )</em></p>
+    
+    <p>
+      Hope I’ve clearly made the case for <strong><em>why</em></strong> tiling exists.
+    </p>
+    
+    <p>
+      With that foundation in place, we’re finally ready to explore <strong><em>how</em></strong> different mobile GPUs move a triangle through their pipelines —
+      and how <strong>ARM Mali</strong> and <strong>Qualcomm Adreno</strong> take such different architectural paths to solve the same problem.
+    </p>
+    
+    <p><strong>Part 2 is where the triangle really starts its journey.</strong></p>
+    
+    <figure>
+      <img src="../assets/img/blog2/Triangle_first_image.png" alt="Triangle starting its journey in Blog 2">
+      <figcaption>The triangle is back — and this time we follow it through the hardware.</figcaption>
+    </figure>
+    
+    <h2>Disclaimer</h2>
+    
+    <p>
+      Before we go any further, a quick but important note.
+    </p>
+    
+    <p>
+      This article does <strong>not</strong> reveal any closed-door secrets, proprietary designs, or confidential implementation details.
+      Everything discussed here is based on <strong>public documentation, developer talks, academic material, and architectural principles</strong>
+      commonly understood in the graphics community.
+    </p>
+    
+    <figure>
+      <img src="../assets/img/blog2/Pasted_image_20251230090113.png" alt="Public sources / reference note graphic">
+      <figcaption>Public sources only — the goal is learning and framing the comparison correctly.</figcaption>
+    </figure>
+    
+    <p>
+      Idea of the article is to frame the comparison correctly as learning of basics.
+    </p>
+    
+    <p>
+      <strong>ARM</strong> is primarily an <strong>IP and architecture provider</strong> — it designs GPU architectures that are licensed by many SoC vendors,
+      who then integrate and tune them within their own systems.
+    </p>
+    
+    <p>
+      <strong>Qualcomm</strong>, on the other hand, builds <strong>vertically integrated GPUs</strong> — designing the architecture, hardware, drivers,
+      and software stack together to deliver fast, power-efficient mobile graphics.
+    </p>
+    
+    <p>
+      Both approaches have produced <strong>industry-leading mobile GPUs in their own right</strong>.
+    </p>
+    
+    <p>
+      So while we follow the journey of a triangle through a mobile GPU, the goal is not to crown a winner.
+      <br>
+      Instead, we’ll explore how <strong>different design philosophies and business models shape architectural decisions</strong> —
+      and how those choices manifest in areas like tiling, scheduling, visibility, and pipeline organisation.
+    </p>
+    
+    <p>
+      Think of it as learning <strong>how ideology influences silicon</strong> — one triangle at a time.
+    </p>
+    
+    <h2>Role of Application and GPU Driver</h2>
+    
+    <p>
+      Apps—whether games, game engines, UI frameworks, home screens, messaging applications—use the GPU in one way or another.
+      This could be for rendering animations, transitions, or different scenes on screen.
+    </p>
+    
+    <p>
+      At a high level, <strong>application developers are responsible for defining the scene</strong>, preparing resources
+      (such as vertex buffers and textures), and issuing draw calls. How these resources are allocated and how draw calls are set up
+      has a direct impact on application performance.
+    </p>
+    
+    <p>
+      That’s why GPU vendors release <strong>Developer Guides</strong> that document best practices for resource usage,
+      draw call submission, and performance optimization. (If you haven’t read them yet, do check them out—they’re surprisingly informative.)
+    </p>
+    
+    <p>
+      However, even with all this in place, <strong>the application still does not talk to the hardware directly</strong>.
+    </p>
+    
+    <figure>
+      <img src="../assets/img/blog2/API_Driver_Drawcall.png" alt="API to driver draw call flow diagram">
+      <figcaption>Applications talk to APIs; drivers translate that intent into GPU-executable work.</figcaption>
+    </figure>
+    
+    <h3>So who actually talks to the GPU?</h3>
+    
+    <p>
+      That’s where <strong>drivers</strong> come into play.
+    </p>
+    
+    <p>
+      Applications don’t communicate with GPU hardware directly. Instead, their requests flow through the graphics driver stack.
+      For simplicity, I’ll treat the <strong>API runtime</strong> and the <strong>User-Mode Driver (UMD)</strong> as a single logical layer here.
+    </p>
+    
+    <p>The flow looks like this:</p>
+    
+    <figure>
+      <img src="../assets/img/blog2/App_UMD_KMD_GPU.png" alt="App → UMD → KMD → GPU flow diagram">
+      <figcaption>High-level flow: Application → (Runtime + UMD) → KMD → GPU.</figcaption>
+    </figure>
+    
+    <h3>User-Mode Driver (UMD): translating intent into work</h3>
+    
+    <p>
+      The User-Mode Driver sits closest to the application and is responsible for translating high-level API calls into something the GPU can eventually execute.
+      Its responsibilities include:
+    </p>
+    
+    <ul>
+      <li><strong>State Tracking</strong><br>
+        UMD maintains the current GPU state—what shaders are bound, which textures and buffers are active, blend modes, raster state, and so on.
+      </li>
+    
+      <li><strong>Validation</strong><br>
+        It checks whether the application’s requests are valid and legal for the hardware (for example, ensuring resource limits aren’t exceeded or incompatible states aren’t combined).
+      </li>
+    
+      <li><strong>Batching &amp; Minor Optimizations</strong><br>
+        It may group commands or perform lightweight optimizations before handing work off downstream.
+      </li>
+    
+      <li><strong>Shader Compilation</strong><br>
+        Although the API provides pre-validated shader bytecode, UMD must translate this into <strong>hardware-specific machine code</strong>.
+        This step involves deep, low-level work such as register allocation, instruction scheduling, and target-specific optimizations.
+      </li>
+    
+      <li><strong>Shader Substitution (quite infamous part)</strong><br>
+        In some cases, drivers detect known applications or games and replace their shaders with hand-tuned versions written by driver engineers to improve performance.
+      </li>
+    
+      <li><strong>State “JIT-ing”</strong><br>
+        Not all API states map cleanly to hardware. When a feature isn’t directly supported, the UMD may <strong>recompile shaders on the fly</strong>, injecting extra logic to emulate that state.
+      </li>
+    
+      <li><strong>Command Buffer Generation</strong><br>
+        Finally, the UMD converts API calls into streams of <strong>hardware-specific binary commands</strong> (often called command buffers or DMA buffers).
+      </li>
+    </ul>
+    
+    <p><em>Ok I know combined Compiler and Driver into one here.</em></p>
+    
+    <h3>Kernel-Mode Driver (KMD): owning the hardware</h3>
+    
+    <p>
+      Once command buffers are ready, they are passed to the <strong>Kernel-Mode Driver</strong>, which has privileged access to the system and the GPU.
+      The KMD is responsible for:
+    </p>
+    
+    <ul>
+      <li>Actual <strong>memory allocation and mapping</strong></li>
+      <li>Resource residency and protection</li>
+      <li>Submitting command buffers to the GPU safely</li>
+    </ul>
+    
+    <h3>Scheduling: sharing the GPU</h3>
+    
+    <p>
+      GPU is a shared system resource—used simultaneously by the OS, the browser, background services, and applications.
+      A <strong>graphics scheduler</strong> (part of the operating system) arbitrates access.
+    </p>
+    
+    <ul>
+      <li>It decides which application gets GPU time and when</li>
+      <li>When execution switches between applications, a <strong>context switch</strong> occurs</li>
+      <li>Context switches require saving and restoring GPU state, which is not free and directly impacts performance</li>
+    </ul>
+    
+    <h3>Why this matters</h3>
+    
+    <p>
+      This entire stack—UMD, KMD, and scheduling—exists to balance <strong>performance, correctness, and fairness</strong>.
+      It also explains why the same application can behave very differently across vendors, APIs, and platforms.
+    </p>
+    
+    <h3>⚖️ ARM vs Qualcomm — Driver Philosophy</h3>
+    
+    <p>
+      ARM does <strong>not ship end-user products</strong>. It licenses GPU IP (Mali) to many SoC vendors—Samsung, MediaTek, Rockchip, etc.
+    </p>
+    
+    <p><strong>Driver implications:</strong></p>
+    <ul>
+      <li>Drivers must be <strong>portable and configurable</strong></li>
+      <li>One codebase must work across:
+        <ul>
+          <li>many SoCs</li>
+          <li>different memory systems</li>
+          <li>different firmware stacks</li>
+        </ul>
+      </li>
+      <li>ARM provides:
+        <ul>
+          <li>reference drivers</li>
+          <li>tuning guides</li>
+          <li>integration hooks</li>
+        </ul>
+      </li>
+    </ul>
+    
+    <p>
+      👉 ARM drivers are designed to be <strong>general-purpose and adaptable</strong>, not deeply tied to one product.
+    </p>
+    
+    <p>
+      <strong>Qualcomm</strong> driver development happens with vertical integration in mind (Adreno GPU, SoC, firmware, driver stack).
+    </p>
+    
+    <p><strong>Driver implications:</strong></p>
+    <ul>
+      <li>Drivers are <strong>hardware-specific</strong></li>
+      <li>Tighter control over:
+        <ul>
+          <li>memory management</li>
+          <li>scheduling</li>
+          <li>power</li>
+        </ul>
+      </li>
+      <li>Lots of optimization put in to minimize the work done in GPUs</li>
+    </ul>
+    
+    <p>
+      👉 Qualcomm drivers are <strong>deeply optimized for a narrow set of GPUs</strong>.
+    </p>
+    
+    <h2>GPU Hardware Architecture</h2>
+    
+    <p>
+      Whenever going I forward I refer Qualcomm GPU, I am refering primarily to this diagram of Adreno 530 taken from chipsandcheese (links in resource).
+    </p>
+    
+    <figure>
+      <img src="../assets/img/blog2/Adreno530.png" alt="Adreno 530 block diagram (reference)">
+      <figcaption>Reference model used in this article (Adreno 530). Source credited in resources.</figcaption>
+    </figure>
+    
+    <p>
+      Similarly for ARM, I am refering to their Bifrost GPU design.
+    </p>
+    
+    <figure>
+      <img src="../assets/img/blog2/ARM_Bifrost_GPU_model.png" alt="ARM Bifrost GPU design overview">
+      <figcaption>Reference model used in this article (ARM Bifrost family).</figcaption>
+    </figure>
+    
+    <figure>
+      <img src="../assets/img/blog2/ARM_Bifrost_GPU_Shader_Core_Model_background_white_1.png" alt="ARM Bifrost shader core model">
+      <figcaption>Bifrost shader core model (high-level).</figcaption>
+    </figure>
+    
+    <h2>Command Processor — Front End of the GPU</h2>
+    
+    <p>
+      Our dear driver organizes all application requests—draw calls, dispatches, and synchronization—into <strong>packets</strong>.
+      These packets are written in a <strong>proprietary, packetized command format</strong> understood by the GPU.
+    </p>
+    
+    <ul>
+      <li><strong>Qualcomm</strong> calls these packets <strong>PM4</strong>, historically derived from ATI/AMD’s PM4 format.</li>
+      <li><strong>ARM</strong> uses <strong>Job Descriptors</strong>.</li>
+    </ul>
+    
+    <p>Each packet typically contains:</p>
+    <ul>
+      <li><strong>State updates</strong><br>
+        Enabling or configuring GPU features (pipeline state, shaders, raster state, etc.)
+      </li>
+      <li><strong>Draw / Dispatch commands</strong><br>
+        Explicit triggers telling the GPU to execute work
+      </li>
+      <li><strong>Resource management &amp; synchronization</strong><br>
+        Barriers, fences, semaphores, and ordering constraints
+      </li>
+    </ul>
+    
+    <h3>CPU → GPU: how commands are delivered</h3>
+    
+    <p>
+      To send these packets to GPU, CPU writes them into memory structures that the GPU can consume.
+      The most common mechanism is a <strong>ring buffer (circular buffer)</strong>:
+    </p>
+    
+    <ul>
+      <li><strong>CPU acts as producer</strong>, writing commands</li>
+      <li><strong>GPU acts as consumer</strong>, reading and executing them</li>
+    </ul>
+    
+    <p>
+      Other signalling mechanisms exist, but for sustained GPU workloads, this producer–consumer model works extremely well.
+      Polling or doorbell-style notifications are often sufficient given the GPU’s deep pipelines and long-running tasks.
+    </p>
+    
+    <h3>Enter the Command Processor</h3>
+    
+    <p>
+      Once the GPU begins consuming the command stream, the <strong>Command Processor (CP)</strong>—the front end of the GPU—takes over.
+      Many people call it the <em>brain</em> of the GPU.
+      I prefer calling it the <strong>stomach</strong> 🙂—because its job is to <strong>chew, digest, and route work</strong> to the rest of the GPU.
+    </p>
+    
+    <p>
+      Its primary responsibility is to manage the incoming command stream so that high-throughput execution units (the shaders) never starve.
+    </p>
+    
+    <h3>What the Command Processor actually does</h3>
+    
+    <p>The Command Processor is typically split into two major stages:</p>
+    
+    <h4>1. Fetching</h4>
+    <ul>
+      <li>Reads command packets from memory locations written by the CPU</li>
+      <li>Maintains ordering and flow control</li>
+    </ul>
+    
+    <h4>2. Decoding</h4>
+    <ul>
+      <li>Interprets binary command packets</li>
+      <li>If the command is a <strong>Draw / Dispatch</strong>, it:
+        <ul>
+          <li>Programs internal GPU state</li>
+          <li>Triggers geometry, tiling, or compute engines</li>
+        </ul>
+      </li>
+      <li>If the command is a <strong>Wait / Sync</strong>, it:
+        <ul>
+          <li>Stalls execution until a condition is satisfied</li>
+        </ul>
+      </li>
+    </ul>
+    
+    <h3>⚖️ ARM vs Qualcomm — Command Processor philosophy</h3>
+    
+    <h4>ARM Mali: Job-centric front end</h4>
+    
+    <p>
+      Traditional <strong>Mali</strong> GPUs used a <strong>Job Manager</strong>–based design.
+    </p>
+    
+    <ul>
+      <li><strong>CPU does more upfront work</strong></li>
+      <li>Tasks are broken into <strong>explicit jobs</strong></li>
+      <li>Each job descriptor contains state for specific GPU blocks</li>
+      <li>GPU processes jobs largely as submitted</li>
+    </ul>
+    
+    <p>This approach:</p>
+    <ul>
+      <li>Keeps hardware simpler</li>
+      <li>Pushes more responsibility to the driver and CPU</li>
+      <li>Makes driver efficiency and job construction critical</li>
+    </ul>
+    
+    <h4>Qualcomm Adreno: firmware-driven command processing</h4>
+    
+    <p>
+      <strong>Adreno</strong> GPUs have long used a more flexible, <strong>firmware-driven Command Processor</strong>.
+    </p>
+    
+    <ul>
+      <li>CP runs <strong>microcode</strong></li>
+      <li>It parses command streams and dynamically distributes work</li>
+      <li>Commands can be routed to different internal GPU “slices”</li>
+      <li>GPU behavior can evolve via <strong>firmware/driver updates</strong> without hardware changes</li>
+    </ul>
+    
+    <p>This enables:</p>
+    <ul>
+      <li>Greater scheduling flexibility</li>
+      <li>Faster iteration on GPU logic</li>
+      <li>Better handling of real-world, imperfect workloads</li>
+    </ul>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th>ARM Mali</th>
+          <th>Qualcomm Adreno</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Front-end model</td>
+          <td>Job-based</td>
+          <td>Command stream</td>
+        </tr>
+        <tr>
+          <td>CPU responsibility</td>
+          <td>Higher</td>
+          <td>Lower</td>
+        </tr>
+        <tr>
+          <td>GPU logic</td>
+          <td>More fixed</td>
+          <td>Firmware-programmable</td>
+        </tr>
+        <tr>
+          <td>Flexibility</td>
+          <td>Driver-driven</td>
+          <td>Hardware + firmware</td>
+        </tr>
+        <tr>
+          <td>Evolution over time</td>
+          <td>Slower</td>
+          <td>Faster</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <h4>Important note</h4>
+    <p>
+      ARM’s <strong>newer architectures</strong> have evolved beyond the classic Job Manager model and now use
+      <strong>Command Stream Front Ends</strong>, moving closer to a modern command-processor design.
+    </p>
+    
+    <h2>Input Assembler — Hardware Front End</h2>
+    
+    <p>
+      <strong>Input Assembler (IA)</strong> is the stage that takes raw buffers of numbers from memory and turns them into something the GPU can reason about:
+      <strong>primitives</strong>, most commonly <strong>triangles</strong>.
+    </p>
+    
+    <p>
+      Its job is not shading—it’s <strong>structuring data</strong> so the shader cores can work efficiently.
+    </p>
+    
+    <h3>What the Input Assembler does</h3>
+    
+    <ul>
+      <li><strong>Index Buffer Processing</strong><br>
+        IA reads the <strong>index buffer</strong> first. Indices define <em>which vertices</em> form <em>which primitives</em> (triangles, lines, points).
+      </li>
+    
+      <li><strong>Vertex Fetch &amp; Data Unpacking</strong><br>
+        Vertex attributes are often stored in compact formats (e.g. <code>BYTE4</code> for colors, <code>SHORT2</code> for UVs).
+        IA fetches this data from memory and <strong>unpacks it into the formats expected by shader cores</strong>, typically 32-bit floats.
+      </li>
+    
+      <li><strong>Bounds Checking</strong><br>
+        Modern APIs require IA to validate indices and buffer accesses to prevent out-of-bounds reads—critical for system stability and security.
+      </li>
+    
+      <li><strong>Batching</strong><br>
+        Vertices are grouped into batches (e.g. 32 / 64 / 128 vertices), aligned with the input capacity of the shader front end.
+        This batching improves cache locality and keeps the shader pipeline fed.
+      </li>
+    </ul>
+    
+    <p>
+      At the end of this stage, the GPU has <strong>well-formed vertex streams</strong> ready for vertex shading.
+    </p>
+    
+    <figure>
+      <img src="../assets/img/blog2/PrimitiveAssembler.png" alt="Primitive / input assembler diagram">
+      <figcaption>Input assembly: turning buffers into triangle primitives the GPU can chew.</figcaption>
+    </figure>
+    
+    <h2>⚖️ ARM vs Qualcomm — Input Assembler philosophy</h2>
+    
+    <h3>ARM Mali: Tiler-centric front end</h3>
+    
+    <p>
+      In <strong>ARM Mali GPUs</strong>, input assembly functionality is closely tied to the <strong>Tiler</strong>, which is part of the control logic.
+    </p>
+    
+    <ul>
+      <li>Vertex data unpacking is often handled by <strong>Load/Store units inside the shader cores</strong></li>
+      <li>The driver and tiler coordinate how vertex data is fetched and prepared</li>
+      <li>The tiler later reuses this information to <strong>assemble triangles for binning</strong></li>
+    </ul>
+    
+    <p>This design:</p>
+    <ul>
+      <li>Keeps dedicated front-end hardware relatively lightweight</li>
+      <li>Pushes more flexibility into shader-side logic</li>
+      <li>Aligns naturally with tile-based rendering</li>
+    </ul>
+    
+    <h3>Qualcomm Adreno: Dedicated front-end blocks</h3>
+    
+    <p>
+      In <strong>Qualcomm Adreno GPUs</strong>, input assembly is handled by more <strong>explicit front-end hardware</strong>:
+    </p>
+    
+    <ul>
+      <li><strong>VFD</strong>
+        <ul>
+          <li>Fetches index buffers</li>
+          <li>Fetches vertex buffers</li>
+          <li>Unpacks and formats vertex attributes</li>
+        </ul>
+      </li>
+      <li><strong>PC</strong>
+        <ul>
+          <li>Batches vertices</li>
+          <li>Assembles them into primitives</li>
+          <li>Dispatches work to shader cores</li>
+        </ul>
+      </li>
+    </ul>
+    
+    <p><em>I am not sure, but these work might be interchangeable between PC and VFD.</em></p>
+    
+    <p>This approach:</p>
+    <ul>
+      <li>Reduces per-vertex work inside shaders</li>
+      <li>Lowers CPU and shader overhead</li>
+      <li>Improves consistency across workloads</li>
+    </ul>
+    
+    <h3>After the Vertex Shader: primitive assembly is used again</h3>
+    
+    <p>
+      In both architectures, <strong>primitive assembly happens twice conceptually</strong>:
+    </p>
+    
+    <ol>
+      <li><strong>Before the vertex shader</strong><br>
+        To fetch and batch vertex data efficiently
+      </li>
+      <li><strong>After the vertex shader</strong><br>
+        To re-assemble transformed vertices into triangles (for tiling, binning, clipping, and rasterization)
+      </li>
+    </ol>
+    
+    <ul>
+      <li>Mali reuses the <strong>Tiler</strong> heavily at this stage</li>
+      <li>Adreno reuses the <strong>Primitive Controller</strong></li>
+    </ul>
+    
+    <p>
+      Both achieve the same goal—feeding triangles to the GPU—but with <strong>very different trade-offs</strong> in hardware complexity,
+      flexibility, and power efficiency.
+    </p>
+
+
+    <h2>Shader Engines — the Heart and Soul of the GPU</h2>
+    
+    <p>
+      This is where <strong>all the real magic happens</strong>.
+    </p>
+    
+    <p>
+      Every other block in the GPU—command processor, tiler, caches, schedulers—exists mainly to
+      <strong>keep the shader engines busy</strong>.<br>
+      They are the main protagonist; everything else is support staff.
+    </p>
+    
+    <h3>What shaders actually do (and why they matter)</h3>
+    
+    <p>
+      Now let’s talk about <strong>shaders themselves</strong> first and then we will see some hardware details—
+      the programs that run on those cores.
+    </p>
+    
+    <p>At a conceptual level, shaders answer two fundamental questions:</p>
+    
+    <ol>
+      <li><strong>Where should this geometry appear on screen? (Vertex Shaders)</strong></li>
+      <li><strong>What color should each pixel be? (Fragment Shaders)</strong></li>
+    </ol>
+    
+    <figure>
+      <img src="../assets/img/blog2/Shader_1.png" alt="Shader overview diagram">
+      <figcaption>Shaders: place geometry, then color pixels.</figcaption>
+    </figure>
+    
+    <p>
+      <strong>Vertex shader</strong> is responsible for <strong>geometric transformation</strong>.<br>
+      This is where the illusion of 3D happens.
+      Each invocation of a vertex shader typically processes <strong>one vertex</strong> and performs:
+    </p>
+    
+    <ul>
+      <li>Coordinate transformations</li>
+      <li>Computes lightings</li>
+      <li>Apply many animation effects based on depths / normals / UVs (per vertex attributes)</li>
+    </ul>
+    
+    <p>
+      <strong>Fragment shader</strong> runs <strong>once per fragment</strong> (often one per pixel).
+    </p>
+    
+    <p>This is where:</p>
+    <ul>
+      <li>Color is computed (interpolation magic happens here)</li>
+      <li>Textures are sampled (this will have its own section later)</li>
+      <li>Lighting is applied</li>
+      <li>The final image emerges</li>
+    </ul>
+    
+    <p><strong>Fragment Shaders are expensive</strong></p>
+    
+    <p>
+      Vertex shaders run per vertex. Fragment shaders run per pixel.<br>
+      On a 4K screen, usually we have thousands of vertices but <strong>millions of pixels</strong>.
+    </p>
+    
+    <p>This means:</p>
+    <ul>
+      <li>Fragment shaders dominate GPU time</li>
+      <li>Small inefficiencies multiply quickly</li>
+      <li>Overdraw (shading pixels you don’t see) hurts badly</li>
+    </ul>
+    
+    <p><strong>This is why mobile GPUs obsess over:</strong></p>
+    <ul>
+      <li><strong>tiling</strong></li>
+      <li><strong>early depth tests</strong></li>
+      <li><strong>killing fragments as early as possible</strong></li>
+    </ul>
+    
+    <p>
+      All to protect the shader cores from wasted work.
+    </p>
+    
+    <h3>What makes a shader engine special?</h3>
+    
+    <figure>
+      <img src="../assets/img/blog2/Shader_hardware_1.png" alt="Shader hardware overview">
+      <figcaption>Hardware building blocks that make shader cores fast.</figcaption>
+    </figure>
+    
+    <ul>
+      <li>
+        <strong>FMAC (Fused Multiply–Add) (ALUs/SFUs)</strong><br>
+        At the heart of every shader engine is the <strong>FMAC unit</strong>, capable of computing
+        <em>a * b + c</em> in a single instruction.
+        <p>
+          Most graphics math—matrix transforms, lighting equations, interpolation—ultimately reduces to long chains of FMACs.
+          GPUs are built to do <em>an absurd number</em> of these every cycle.
+        </p>
+        <figure>
+          <img src="../assets/img/blog2/FMAC2_1.png" alt="FMAC illustration">
+          <figcaption>FMAC everywhere: the workhorse behind most GPU math.</figcaption>
+        </figure>
+      </li>
+    
+      <li>
+        <strong>SIMD</strong><br>
+        A single instruction is broadcast to a "vector" of data.
+        <ul>
+          <li>Very area-efficient because you only need one instruction decoder and control logic for many ALUs.</li>
+          <li>It has wide "lanes" (32 or 64) (also the reason for batching that we saw in IA stage before) that must all do the same thing at the same clock cycle.</li>
+        </ul>
+      </li>
+    
+      <li>
+        <strong>Throughput over latency</strong><br>
+        GPUs care far more about <strong>throughput</strong> than <strong>latency</strong>.
+        <ul>
+          <li>A CPU tries to finish <em>one task</em> as fast as possible.</li>
+          <li>A GPU accepts that a single operation may take many cycles—but hides that cost by running <strong>thousands of threads simultaneously</strong>.</li>
+        </ul>
+        <p>
+          While one group of threads waits on memory, others are executing math. This massive parallelism is how GPUs keep their shader engines busy
+          despite high memory latency.
+        </p>
+      </li>
+    
+      <li>
+        <strong>Register scarcity (the silent limiter)</strong><br>
+        Because so many threads run at once, <strong>each thread gets only a small slice of the register file</strong>.
+        This leads to an important performance constraint:
+        <ul>
+          <li>If a shader uses <strong>too many registers</strong>, the GPU must reduce the number of active threads.</li>
+          <li>Fewer active threads means less ability to hide memory latency.</li>
+          <li>The result: <strong>lower overall performance</strong>, even if the math itself is simple.</li>
+        </ul>
+        <p>
+          This is why shader authors obsess over:
+        </p>
+        <ul>
+          <li>register pressure</li>
+          <li>temporary variables</li>
+          <li>instruction reordering</li>
+        </ul>
+        <p>
+          Performance is often limited not by math, but by <strong>how many threads you can keep resident</strong>.
+        </p>
+      </li>
+    </ul>
+    
+    <h3>⚖️ ARM vs Qualcomm — Shader philosophy</h3>
+    
+    <h4>ARM Mali: scalable, licensable, predictable</h4>
+    
+    <p>ARM designs Shader Cores that must scale across:</p>
+    <ul>
+      <li>many SoC vendors. So shader cores are <strong>simpler and more uniform</strong></li>
+      <li>different power envelopes. So performance scales mostly by <strong>adding more cores</strong></li>
+    </ul>
+    
+    <h4>Qualcomm Adreno: tightly optimized, vertically integrated</h4>
+    
+    <p>
+      Qualcomm calls shader cores as <strong>Shader Processors</strong>.<br>
+      Qualcomm designs shader cores <strong>for its own SoCs only</strong>.
+      Adreno shader cores are designed to extract <strong>maximum work per cycle per watt</strong> on known hardware.
+    </p>
+    
+    <hr>
+    
+    <h2>Post-Transform Caches &amp; Interpolation Engines</h2>
+    
+    <p>
+      Before a shader ever runs, GPUs use several <strong>smart techniques to avoid redundant work</strong>.
+      These mechanisms exist for one simple reason:
+    </p>
+    
+    <blockquote>
+      <p><strong>Shader work is expensive.<br>Doing the same work twice is unforgivable.</strong></p>
+    </blockquote>
+    
+    <p>
+      Two of the most important techniques here are <strong>Post-Transform Caching</strong> and <strong>Hardware Interpolation</strong>.
+    </p>
+    
+    <h3>Post-Transform Cache — don’t transform the same vertex twice</h3>
+    
+    <p>
+      In real meshes, <strong>vertices are shared</strong> between multiple triangles.<br>
+      Without caching, the GPU would re-run the vertex shader for the <em>same vertex</em> again and again.
+    </p>
+    
+    <p>
+      After a vertex is processed by the vertex shader, its <strong>transformed result</strong> is stored in a small cache.
+    </p>
+    
+    <ul>
+      <li>When a new triangle references the same vertex index:
+        <ul>
+          <li>the GPU checks the cache</li>
+          <li>if found → <strong>vertex shader is skipped</strong></li>
+          <li>cached result is reused</li>
+        </ul>
+      </li>
+    </ul>
+    
+    <p><strong>Good vertex reuse = free performance.</strong></p>
+    
+    <h3>Interpolation Engines — math you don’t want in shaders</h3>
+    
+    <p>
+      Once vertices are transformed and triangles are rasterized, the GPU must compute <strong>per-pixel values</strong>
+      such as texture coordinates (UVs), normals, colors, and etc.
+    </p>
+    
+    <h4>Barycentric interpolation</h4>
+    
+    <p>
+      GPU uses <strong>barycentric coordinates</strong> to interpolate values smoothly across a triangle.
+      It is mathematically well-defined and is identical for every pixel, so it does <strong>not</strong> need to be programmable.
+      GPUs implement this as fixed-function hardware.
+    </p>
+    
+    <figure>
+      <img src="../assets/img/blog2/BarycentricInterpolation_1.png" alt="Barycentric interpolation diagram">
+      <figcaption>Barycentric interpolation: fixed-function math that saves shader registers.</figcaption>
+    </figure>
+    
+    <p>
+      I always used to wonder <strong>why this was implemented as a fixed-function step instead of being fully programmable</strong>.
+      The answer only clicked once I understood the <strong>importance of register usage in shaders</strong>—and how aggressively the compiler allocates them per thread.
+    </p>
+    
+    <p>
+      If interpolation were done inside a programmable shader, it would require extra instructions and registers. On a GPU, that has a cascading effect.
+    </p>
+    
+    <p>
+      Because the register file is shared across many threads, <strong>higher register usage per thread directly reduces the number of threads that can be active at once</strong>.
+      Fewer active threads means poorer latency hiding—and lower overall throughput.
+    </p>
+    
+    <p>By moving interpolation into <strong>fixed-function hardware</strong>:</p>
+    <ul>
+      <li>shaders use fewer registers</li>
+      <li>more occupancy and GPU can keep more threads in flight</li>
+    </ul>
+    
+    <p>
+      So what initially looks like an “unnecessary” hardware block turns out to be a <strong>critical design choice</strong>—
+      one that protects shader occupancy and, ultimately, performance.
+    </p>
+    
+    <blockquote>
+      <p>
+        Sometimes performance isn’t about doing more work in shaders.<br>
+        It’s about doing <strong>less</strong> there.
+      </p>
+    </blockquote>
+    
+    <h4>⚖️ ARM vs Qualcomm — Interpolation angle</h4>
+    
+    <p>
+      ARM would be doing it in shaders using <strong>Varying Unit</strong> and Qualcomm with <strong>VPC</strong>.
+      I could be wrong about the block name here. But idea of this post transform cache and interpolation engine is to sit close
+      to shader engines so that performance gain is accomplished.
+    </p>
+    
+    <hr>
+    
+    <h2>Triangle Setup &amp; Rasterizer</h2>
+    
+    <p>
+      By now, the <strong>vertex shader</strong> has positioned your vertices correctly in the scene.<br>
+      The next step is to turn those vertices into <strong>2D pixels</strong>. This is where vertices “grow up” into <strong>triangles</strong>.
+    </p>
+    
+    <h3>Why triangles?</h3>
+    
+    <p>
+      I named the blog on this. But didn't explain it in first place. I think right time is now.
+      Triangles became the gold standard because they are:
+    </p>
+    
+    <ul>
+      <li><strong>Always planar</strong> – three points uniquely define a surface</li>
+      <li><strong>Easy to decompose</strong> – any complex object can be broken into triangles</li>
+      <li><strong>Easy to test</strong> – intersections, visibility, and coverage are simple</li>
+      <li><strong>Perfect for interpolation</strong> – per-vertex data blends cleanly across a triangle</li>
+    </ul>
+    
+    <p>
+      Also these forms important interview questions of triangle / ray intersection or triangle / point intersection.
+    </p>
+    
+    <h3>Triangle setup</h3>
+    
+    <p>
+      A fixed-function block groups every <strong>three vertices</strong> into a triangle.<br>
+      But not every triangle is worth rendering.
+    </p>
+    
+    <h3>Culling &amp; clipping</h3>
+    
+    <p>Before rasterization, it important to remove useless triangles or atleast reduce it :</p>
+    
+    <ul>
+      <li><strong>Culling</strong> (remove)
+        <ul>
+          <li>Back-face culling</li>
+          <li>Zero-area triangle culling</li>
+          <li>Frustum culling</li>
+        </ul>
+        <figure>
+          <img src="../assets/img/blog2/Culling_1.png" alt="Culling diagram">
+          <figcaption>Culling removes work that will never contribute to the final frame.</figcaption>
+        </figure>
+      </li>
+    
+      <li><strong>Clipping</strong> (reduce)
+        <ul>
+          <li>Triangles partially outside the view are clipped</li>
+          <li>Often assisted by <strong>guard bands</strong></li>
+          <li>Clipping is cycle-heavy → keep it minimal for performance</li>
+        </ul>
+        <figure>
+          <img src="../assets/img/blog2/Clipping_1.png" alt="Clipping diagram">
+          <figcaption>Clipping trims triangles to the visible region (expensive, so avoid when possible).</figcaption>
+        </figure>
+      </li>
+    </ul>
+    
+    <h3>Rasterization</h3>
+    
+    <p>Now triangles are converted into pixels:</p>
+    
+    <ul>
+      <li>A <strong>bounding box</strong> is computed for each triangle</li>
+      <li>The GPU checks which pixels fall inside it</li>
+      <li>Triangles are mapped into <strong>raster space</strong></li>
+      <li>Pixels are grouped into <strong>tiles</strong> (tile size varies by GPU)</li>
+    </ul>
+    
+    <blockquote>
+      <p>
+        Triangle setup decides <em>what survives</em>.<br>
+        Rasterization decides <em>which pixels matter</em>.
+      </p>
+    </blockquote>
+    
+    <p>
+      Each tile tracks which triangles are visible within it. This <strong>tiling step is critical for mobile GPUs</strong>,
+      as it drastically reduces overdraw and saves bandwidth.
+    </p>
+    
+    <p>
+      Usually, GPUs have a <strong>dedicated block</strong> to track which triangles are visible in which tiles.<br>
+      This triangle–tile visibility data is often <strong>compressed</strong> to reduce bandwidth when it’s written out and read back later.
+      This work happens during the <strong>Binning Pass</strong>.
+    </p>
+    
+    <h3>Binning Pass</h3>
+    
+    <ul>
+      <li>Operates on the <strong>entire scene</strong></li>
+      <li>Determines <strong>which triangles overlap which tiles</strong></li>
+      <li>Stores compact per-tile triangle lists</li>
+    </ul>
+    
+    <p>
+      No pixels are shaded here—only visibility and coverage are resolved.
+    </p>
+    
+    <h3>Rendering Pass</h3>
+    
+    <p>The <strong>Rendering Pass</strong> works very differently:</p>
+    
+    <ul>
+      <li>Operates <strong>one tile at a time</strong></li>
+      <li>Fetches <strong>only the triangles relevant to that tile</strong></li>
+      <li>Shades and rasterizes pixels for that tile only</li>
+    </ul>
+    
+    <p>Because each tile sees only a small subset of triangles:</p>
+    <ul>
+      <li>On-chip memory requirements are much lower</li>
+      <li>Fewer vertex attributes need to be kept alive</li>
+      <li>Bandwidth and power consumption drop significantly</li>
+    </ul>
+    
+    <blockquote>
+      <p>
+        <strong>Binning Pass:</strong> whole scene, triangle → tile mapping<br>
+        <strong>Rendering Pass:</strong> per tile, triangle → pixel shading
+      </p>
+    </blockquote>
+    
+    <p>
+      This separation is one of the key reasons <strong>tile-based rendering is so effective on mobile GPUs</strong>.
+    </p>
+    
+    <h3>⚖️ ARM vs Qualcomm — Binning / Triangle Setup</h3>
+    
+    <p>
+      ARM Mali usually does all these tasks of triangle setup (culling / clipping), rasterizing, storing of tile information using the
+      <strong>Tiler block</strong>.<br>
+      whereas Qualcomm Adreno uses multiple blocks of <strong>TSE</strong>, <strong>RAS</strong>, <strong>VSC</strong> to do the same tasks.
+    </p>
+    
+    <p>
+      Again, this design decision contrast fits <em>perfectly</em> with your earlier
+      <strong>ARM = simpler hardware, more structure</strong> vs <strong>Qualcomm = explicit, flexible blocks</strong>.
+    </p>
+    
+    <hr>
+    
+    <h2>Early-Z and Late-Z Testing</h2>
+    
+    <p>
+      At this stage, triangles have been identified and rasterized into <strong>pixel candidates</strong>.<br>
+      Before actually <strong>shading</strong> those pixels, the GPU asks an important question:
+    </p>
+    
+    <blockquote>
+      <p><em>Will this pixel even be visible?</em></p>
+    </blockquote>
+    
+    <p>
+      If a pixel is completely hidden behind another one, shading it is wasted work.<br>
+      This is where <strong>depth (Z) testing</strong> saves performance.
+    </p>
+    
+    <figure>
+      <img src="../assets/img/blog2/DepthTesting.png" alt="Depth testing diagram">
+      <figcaption>Depth testing decides visibility and can save huge shading work.</figcaption>
+    </figure>
+    
+    <h3>Early-Z Testing</h3>
+    
+    <p>
+      <strong>Early-Z</strong> performs a depth test <strong>before</strong> the fragment shader runs.
+    </p>
+    
+    <ul>
+      <li>Pixels that fail the depth test are <strong>discarded early</strong></li>
+      <li>Fragment shaders are <strong>never executed</strong> for those pixels</li>
+      <li>Avoids unnecessary shading work</li>
+      <li><strong>Important GPU performance optimizations</strong></li>
+    </ul>
+    
+    <p>Early-Z works best when:</p>
+    <ul>
+      <li>depth is written normally</li>
+      <li>shaders do not modify depth</li>
+      <li>no complex blending or discard logic is used</li>
+    </ul>
+    
+    <h3>Late-Z Testing</h3>
+    
+    <p>
+      <strong>Late-Z</strong> performs the depth test <strong>after</strong> the fragment shader runs.
+      This is required when:
+    </p>
+    
+    <ul>
+      <li>fragment shaders <strong>modify depth</strong></li>
+      <li>depth depends on shader results</li>
+      <li>certain blending or discard operations are used</li>
+    </ul>
+    
+    <p>In these cases:</p>
+    <ul>
+      <li>the shader must run first</li>
+      <li>depth is tested afterward to decide whether the pixel is written</li>
+    </ul>
+    
+    <p>
+      Late-Z still prevents incorrect blending, but <strong>cannot save shader work</strong>.
+    </p>
+    
+    <blockquote>
+      <p>
+        Early-Z avoids shading pixels you’ll never see. Saves both compute and power.<br>
+        Late-Z exists when correctness matters more than speed.
+      </p>
+    </blockquote>
+    
+    <h3>⚖️ ARM vs Qualcomm — Depth Testing</h3>
+    
+    <p>
+      Both GPUs implement <strong>Early-Z</strong> and <strong>Late-Z</strong>, but the <strong>hardware blocks responsible</strong> differ.
+    </p>
+    
+    <h4>ARM Mali</h4>
+    <ul>
+      <li>Uses a <strong>ZS / Blend</strong> block (Depth–Stencil + Blend) for Early Z and LateZ testing</li>
+      <li><strong>Centralized</strong>: So same block might be accessed before and after shader engine.</li>
+    </ul>
+    
+    <h4>Qualcomm Adreno</h4>
+    <ul>
+      <li>Depth testing is handled across front/back-end stages:</li>
+      <li><strong>Early-Z</strong> typically tied to front-end setup (e.g., <strong>TSE/RAS</strong> path)</li>
+      <li><strong>Late-Z</strong> handled in the <strong>Render Backend (RB)</strong> alongside blending</li>
+      <li><strong>Distributed</strong>: More explicit separation of responsibilities across blocks</li>
+    </ul>
+    
+    <p>
+      Same goal—<strong>skip invisible pixels</strong>—different block layouts to get there.
+    </p>
+    
+    <hr>
+    
+    <h2>Fragment Shaders &amp; Texture Samplers</h2>
+    
+    <p>
+      We’ve reached the stage where the <strong>fragment shader</strong> finally runs.<br>
+      Its main job is to <strong>color pixels</strong>, using values interpolated across the triangle via <strong>barycentric coordinates</strong>.
+      Conceptually, this means converting screen-space <code>(x, y)</code> into texture-space <code>(u, v)</code> and combining colors smoothly.
+    </p>
+    
+    <p>
+      But real rendering is rarely just “mix a few colors.”
+    </p>
+    
+    <h3>Textures: more than simple color mixing</h3>
+    
+    <p>
+      Often, you want to apply a <strong>texture image</strong>—patterns, photos, details—mapped onto geometry.<br>
+      This image may need to be <strong>wrapped, stretched, minified, or magnified</strong>, typically using <strong>bilinear</strong> or higher-order filtering.
+    </p>
+    
+    <figure>
+      <img src="../assets/img/blog2/Texture_Image1_1.png" alt="Texture mapping illustration">
+      <figcaption>Textures add detail, but sampling them efficiently is the real challenge.</figcaption>
+    </figure>
+    
+    <h3>Why not do this in shaders?</h3>
+    
+    <p>
+      You <em>could</em> implement bilinear filtering in a shader—but it would be <strong>terribly slow</strong>.<br>
+      Texture sampling:
+    </p>
+    
+    <ul>
+      <li>is highly repetitive</li>
+      <li>involves many memory lookups</li>
+      <li>is bandwidth-heavy</li>
+    </ul>
+    
+    <p>
+      So GPUs use <strong>dedicated fixed-function Texture Samplers</strong>.<br>
+      These units can fetch and filter <strong>4–8 texels per cycle</strong> using compact fixed-point logic that is far more
+      <strong>power- and area-efficient</strong> than general ALUs.
+    </p>
+    
+    <h3>What a texture sample actually contains</h3>
+    
+    <p>
+      A texture “sample” is not just <code>(u, v)</code>. A typical request includes <strong>6–10 floats</strong>, such as:
+    </p>
+    
+    <ul>
+      <li>Texture coordinates <code>(u, v)</code></li>
+      <li><strong>Gradients</strong> (partial derivatives)</li>
+    </ul>
+    
+    <p>
+      I hate gradients from high school. But it is necessary (evil - atleast for me).
+      These partial derivatives tell the sampler how much the texture coordinates change from one pixel to the next on the screen.
+      This is crucial for <strong>Mipmap selection</strong> and <strong>Anisotropic filtering</strong>.
+    </p>
+    
+    <figure>
+      <img src="../assets/img/blog2/Texture_Image2_1.png" alt="Texture gradients and mipmapping illustration">
+      <figcaption>Gradients drive mip selection and anisotropic footprint.</figcaption>
+    </figure>
+    
+    <h3>Inside the Texture Sampler</h3>
+    
+    <p>
+      Texture samplers are <strong>separate units</strong>, outside the main shader ALUs.
+    </p>
+    
+    <ul>
+      <li><strong>Dispatch / Shuffling</strong><br>
+        Shaders operate in groups (often <code>2×2</code> pixel quads). A batch of <strong>16–64 sampling requests</strong> is sent together to the sampler.
+      </li>
+    
+      <li><strong>Address calculation</strong><br>
+        Textures are stored in <strong>tiled / swizzled layouts</strong> (e.g. Morton/Z-order), not simple rows.
+        The sampler converts <code>(u, v)</code> into physical memory addresses with good locality.
+      </li>
+    
+      <li><strong>Filtering logic</strong><br>
+        This is the expensive part:
+        <ul>
+          <li><strong>Bilinear:</strong> 4 texels, 3 interpolations</li>
+          <li><strong>Trilinear:</strong> 8 texels, 7 interpolations</li>
+          <li><strong>Anisotropic:</strong> up to <strong>dozens or even ~128 texels</strong> for one pixel</li>
+        </ul>
+      </li>
+    </ul>
+    
+    <p>
+      This is why texture sampling is fundamentally <strong>bandwidth-heavy</strong>.
+    </p>
+    
+    <p>
+      Only reason I mentioned about the texels is to scare you about the heavy data movement (worst case the bandwidth requirement would be measured in
+      <strong>terabytes per second</strong>, which no bus can handle) that is happening for each pixel. So GPU Designer were scared too, they tackled this nightmare.
+    </p>
+    
+    <h3>How GPUs survive the bandwidth nightmare</h3>
+    
+    <ul>
+      <li><strong>Texture caches (L1/L2)</strong><br>
+        Texture access has strong spatial locality. Neighboring pixels usually sample neighboring texels, so cache hit rates are very high.
+      </li>
+      <li><strong>Compression &amp; decompression</strong><br>
+        Textures are stored in compressed formats (e.g. BCn). Hardware decompresses texels
+        <strong>after cache lookup but before filtering</strong>, saving massive bandwidth.
+        (Try reading NTC as well if bored old texture formats :) )
+      </li>
+    </ul>
+    
+    <h3>Returning data to shaders</h3>
+    
+    <p>
+      Once the sampler computes the final color:
+    </p>
+    
+    <ul>
+      <li>it sends the result back to the shader engine</li>
+      <li>this return path is often a <strong>bottleneck</strong></li>
+    </ul>
+    
+    <p>
+      The sampler unit is "asynchronous"—the shader sends a request and continues working on other things until the texture unit signals that the data is ready.
+      This latency hiding is critical for keeping shader cores busy.
+    </p>
+    
+    <blockquote>
+      <p>
+        Fragment shaders decide <em>what to do</em>.<br>
+        Texture samplers decide <em>how to fetch data fast enough to make it possible</em>.
+      </p>
+    </blockquote>
+    
+    <h3>⚖️ ARM vs Qualcomm — Fragment Shader / Texture Samplers</h3>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th>ARM</th>
+          <th>Qualcomm Adreno</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Texture compression</td>
+          <td><strong>AFBC (ARM Frame Buffer Compression)</strong></td>
+          <td><strong>UBWC (Universal Bandwidth Compression)</strong></td>
+        </tr>
+        <tr>
+          <td>Texture Samplers</td>
+          <td>Texture Units (TU)</td>
+          <td>Texture Processors (TP)</td>
+        </tr>
+        <tr>
+          <td>Compression granularity</td>
+          <td><em>Tile-aware compression that perfectly fits TBDR</em></td>
+          <td><em>System-wide compression to keep bandwidth low everywhere</em></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <p>
+      Both support bilinear, trilinear and anisotropic filtering.
+      Both ARM and Qualcomm tolerate shader complexity differently, which naturally leads to different bandwidth strategies.
+      That discussion is interesting—but not our focus here.
+    </p>
+    
+    <p>
+      For now, let’s stick to the <strong>triangle’s journey</strong> and see what happens next.
+    </p>
+    
+    <hr>
+    
+    <h2>Pixel Blending — the final stretch</h2>
+    
+    <p>
+      If you’re tired, imagine the GPU 😄 (Deep Breaths). We’re almost at the end.
+    </p>
+    
+    <p>
+      At this stage, fragment shaders have produced colors. Now the GPU must <strong>blend those colors</strong> with existing data
+      (depth-tested, ordered, transparent) and <strong>write the final result to the framebuffer</strong>.
+    </p>
+    
+    <p>
+      This is again a fixed function operation done by performing math.
+    </p>
+    
+    <ul>
+      <li><strong>Color blending</strong><br>
+        Combines the incoming fragment color with the existing framebuffer color using equations like alpha blending (transparency),
+        additive blending (glow, particles) and multiplicative blending (darkening).
+      </li>
+      <li><strong>Depth &amp; stencil resolution</strong><br>
+        Works with depth/stencil results (Early-Z or Late-Z outcomes) to decide write, update and discard the pixel.
+      </li>
+    </ul>
+    
+    <figure>
+      <img src="../assets/img/blog2/Blending_1.png" alt="Blending pipeline diagram">
+      <figcaption>Blend and depth/stencil: the last gate before a pixel becomes visible.</figcaption>
+    </figure>
+    
+    <blockquote>
+      <p>
+        Blend Unit is the GPU’s last gatekeeper—every pixel must pass through it before becoming visible.
+      </p>
+    </blockquote>
+    
+    <h3>⚖️ ARM vs Qualcomm — Blending</h3>
+    
+    <ul>
+      <li><strong>ARM Mali</strong>
+        <ul>
+          <li>Uses a dedicated <strong>Blend Unit</strong></li>
+          <li>Performs blending and resolves directly into the <strong>final framebuffer</strong></li>
+          <li><strong>ZS (Depth–Stencil) sits before blend unit</strong> (Decide visibility first, then blend.)</li>
+          <li>Late-Z is handled <strong>inside the tile</strong>, while data is still on-chip</li>
+        </ul>
+      </li>
+    
+      <li><strong>Qualcomm Adreno</strong>
+        <ul>
+          <li>Uses the <strong>Render Backend (RB)</strong></li>
+          <li>Blends pixels into <strong>GMEM (on-chip memory)</strong> first</li>
+          <li>Later <strong>resolves GMEM → final framebuffer</strong></li>
+          <li>Late-Z testing is done here instead of separate unit like ARM</li>
+          <li>Blending and depth decisions might be tightly coupled (I believe they wanted more flexibility before discarding the pixels before blending, please correct me if anything else).</li>
+        </ul>
+      </li>
+    </ul>
+    
+    <p>
+      And with that, the journey comes to an end.
+    </p>
+    
+    <p>
+      I will just rant out now few bits. Feel free to skip now to Resource section which might be useful.
+    </p>
+    
+    <p>
+      So what began as a few numbers in memory slowly turned into something tangible—pixels on your screen.
+      Along the way, the triangle was transformed, clipped, binned, tested, shaded, sampled, blended, and finally resolved.
+      Each step quietly did its job, making sure only the work that truly mattered survived.
+    </p>
+    
+    <p>
+      Most of this process is invisible to us. It happens every frame, every second, within tight power and bandwidth limits,
+      especially on mobile GPUs. Yet every block we discussed exists for a reason: to make rendering efficient, predictable,
+      and just fast enough to feel effortless.
+    </p>
+    
+    <p>
+      I know I’ve skipped—or only lightly touched the surface of vast ocean—many parts along the way.
+      Some details deserve their own deep dives, and others are best left for discussion in the comments or exploration elsewhere on the internet.
+    </p>
+    
+    <p>
+      The reason I wrote this blog is simple. Whenever I try to revisit GPU fundamentals, I usually start the same way:
+      the graphics pipeline, the journey from 3D to 2D, and the classic <em>“scratch a pixel”</em> way of thinking.
+      That path inevitably leads to Fabian Giesen’s excellent series, <em>A Trip Through the Graphics Pipeline (2011)</em>—which remains one of the best explanations out there.
+    </p>
+    
+    <p>
+      But I always struggled to fully map that mental model onto <strong>mobile GPU hardware</strong>, which is what I work with most of the time.
+      And I still had a lingering question in my head: <em>why do ARM and Qualcomm approach things so differently?</em>
+    </p>
+    
+    <p>
+      Writing this blog forced me to look at both through the same <strong>pipeline lens</strong>—following the triangle step by step,
+      without jumping straight into comparisons or benchmarks. That exercise alone made a lot of things click for me.
+    </p>
+    
+    <p>
+      If this ends up serving as a useful guide for even a few others who are curious (and patient enough to read this far), that’s more than enough.
+      And if nothing else—maybe some future GPT will stumble upon it and learn how a triangle really travels 🙂.
+    </p>
+    
+    <hr>
+    
+    <h2>Resources</h2>
+    
+    <ul>
+      <li>
+        <a href="https://chipsandcheese.com/p/inside-qualcomms-adreno-530-a-small-mobile-igpu" target="_blank" rel="noopener noreferrer">
+          Inside Qualcomm’s Adreno 530, a Small Mobile iGPU
+        </a>
+      </li>
+      <li>
+        <a href="https://developer.arm.com/community/arm-community-blogs/b/mobile-graphics-and-gaming-blog/posts/the-mali-gpu-an-abstract-machine-part-4---the-bifrost-shader-core" target="_blank" rel="noopener noreferrer">
+          Arm Community (Bifrost Shader Core)
+        </a>
+      </li>
+      <li>
+        <a href="https://developer.arm.com/Processors/Mali-G71" target="_blank" rel="noopener noreferrer">
+          Mali-G71 Product Support
+        </a>
+      </li>
+      <li>
+        <a href="https://www.androidauthority.com/arm-mali-g71-695067/" target="_blank" rel="noopener noreferrer">
+          The ARM Mali-G71 and Bifrost - Everything you need to know
+        </a>
+      </li>
+      <li>
+        <a href="https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/" target="_blank" rel="noopener noreferrer">
+          A Trip Through the Graphics Pipeline (2011) — Fabian Giesen
+        </a>
+        <span> (Courtesy : Himanshu Govil for introducing it)</span>
+      </li>
+      <li>
+        <a href="https://scratchapixel.com" target="_blank" rel="noopener noreferrer">
+          Scratchapixel
+        </a>
+        <span> (Courtesy : Ashutosh Mishra)</span>
+      </li>
+    </ul>
+
+        <p class="signature">
+          Keep TRYing, stay WELL, and keep deBUGing.
+        </p>
+
+        <hr>
+
+        <h2>Comments</h2>
+        <div id="giscus-container"></div>
+
+        <script src="https://giscus.app/client.js"
+          data-repo="trywellbug/trywellbug"
+          data-repo-id="R_kgDOQgAPDw"
+          data-category="General"
+          data-category-id="DIC_kwDOQgAPD84CzpKq"
+          data-mapping="url"
+          data-strict="0"
+          data-reactions-enabled="1"
+          data-emit-metadata="0"
+          data-input-position="bottom"
+          data-theme="preferred_color_scheme"
+          data-lang="en"
+          crossorigin="anonymous"
+          async>
+        </script>
+      </div>
+
+    </article>
+  </main>
+
+  <!-- ✅ Watermark -->
+  <div class="watermark">trywellbug.com | Ankit Singh</div>
+
+  <!-- Multi-line typewriter effect for blog headings -->
+  <script>
+  (function () {
+    const lines = document.querySelectorAll(".typewriter-line");
+
+    function runTypewriter(el, delayStart = 0) {
+      const text = el.getAttribute("data-text") || "";
+      let i = 0;
+      el.textContent = "";
+
+      function typing() {
+        if (i <= text.length) {
+          el.textContent = text.slice(0, i);
+          i++;
+          const delay = 50 + Math.random() * 70; // irregular typing
+          setTimeout(typing, delay);
+        }
+      }
+      setTimeout(typing, delayStart);
+    }
+
+    let delay = 500;
+    lines.forEach(line => {
+      runTypewriter(line, delay);
+      const len = (line.getAttribute("data-text") || "").length;
+      delay += len * 55;
+    });
+  })();
+
+  const updated = document.querySelector(".blog-meta-icons span:nth-child(3)");
+  if (updated) {
+    updated.textContent = "🔄 Updated: " + new Date(document.lastModified)
+      .toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
+  }
+  </script>
+</body>
+</html>
