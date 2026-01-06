@@ -316,11 +316,11 @@
         <div class="blog-meta-icons">
           <span>👤 Ankit Singh ( Senior Engineer - GPU Research )</span>
           <!-- ✅ Update these dates for Blog 2 -->
-          <span>📅 Published: TBD</span>
+          <span>📅 Published: 6 Jan 2026</span>
           <span>🔄 Updated: TBD</span>
         </div>
 
-        <p class="read-time">⏱️ TBD min read</p>
+        <p class="read-time">⏱️ 15-20 min read</p>
 
         <div class="tags">
           <span>#GPU</span>
@@ -417,7 +417,7 @@
     </p>
     
     <figure>
-      <img src="../assets/img/blog2/Pasted_image_20251230090113.png" alt="Public sources / reference note graphic">
+      <img src="../assets/img/blog2/QualcommvsARM.png" alt="Public sources / reference note graphic">
       <figcaption>Public sources only — the goal is learning and framing the comparison correctly.</figcaption>
     </figure>
     
@@ -533,7 +533,7 @@
       </li>
     </ul>
     
-    <p><em>Ok I know combined Compiler and Driver into one here.</em></p>
+    <p><em>I know ,  you might be missing Compiler here .</em></p>
     
     <h3>Kernel-Mode Driver (KMD): owning the hardware</h3>
     
@@ -621,7 +621,7 @@
     <h2>GPU Hardware Architecture</h2>
     
     <p>
-      Whenever going I forward I refer Qualcomm GPU, I am refering primarily to this diagram of Adreno 530 taken from chipsandcheese (links in resource).
+      Going forward I will refer Qualcomm GPU based  primarily on this diagram of Adreno 530 taken from chipsandcheese (links in resource).
     </p>
     
     <figure>
@@ -630,7 +630,7 @@
     </figure>
     
     <p>
-      Similarly for ARM, I am refering to their Bifrost GPU design.
+      Similarly for ARM, I will be refering to their Bifrost GPU design.
     </p>
     
     <figure>
@@ -639,7 +639,7 @@
     </figure>
     
     <figure>
-      <img src="../assets/img/blog2/ARM_Bifrost_GPU_Shader_Core_Model_background_white_1.png" alt="ARM Bifrost shader core model">
+      <img src="../assets/img/blog2/ARM_Bifrost_GPU_Shader_Core_Model_background_white.png" alt="ARM Bifrost shader core model">
       <figcaption>Bifrost shader core model (high-level).</figcaption>
     </figure>
     
@@ -956,7 +956,7 @@
     </ol>
     
     <figure>
-      <img src="../assets/img/blog2/Shader_1.png" alt="Shader overview diagram">
+      <img src="../assets/img/blog2/Shader.png" alt="Shader overview diagram">
       <figcaption>Shaders: place geometry, then color pixels.</figcaption>
     </figure>
     
@@ -1012,7 +1012,7 @@
     <h3>What makes a shader engine special?</h3>
     
     <figure>
-      <img src="../assets/img/blog2/Shader_hardware_1.png" alt="Shader hardware overview">
+      <img src="../assets/img/blog2/Shader_hardware.png" alt="Shader hardware overview">
       <figcaption>Hardware building blocks that make shader cores fast.</figcaption>
     </figure>
     
@@ -1026,7 +1026,7 @@
           GPUs are built to do <em>an absurd number</em> of these every cycle.
         </p>
         <figure>
-          <img src="../assets/img/blog2/FMAC2_1.png" alt="FMAC illustration">
+          <img src="../assets/img/blog2/FMAC2.png" alt="FMAC illustration">
           <figcaption>FMAC everywhere: the workhorse behind most GPU math.</figcaption>
         </figure>
       </li>
@@ -1150,7 +1150,7 @@
     </p>
     
     <figure>
-      <img src="../assets/img/blog2/BarycentricInterpolation_1.png" alt="Barycentric interpolation diagram">
+      <img src="../assets/img/blog2/BarycentricInterpolation.png" alt="Barycentric interpolation diagram">
       <figcaption>Barycentric interpolation: fixed-function math that saves shader registers.</figcaption>
     </figure>
     
@@ -1240,7 +1240,7 @@
           <li>Frustum culling</li>
         </ul>
         <figure>
-          <img src="../assets/img/blog2/Culling_1.png" alt="Culling diagram">
+          <img src="../assets/img/blog2/Culling.png" alt="Culling diagram">
           <figcaption>Culling removes work that will never contribute to the final frame.</figcaption>
         </figure>
       </li>
@@ -1252,7 +1252,7 @@
           <li>Clipping is cycle-heavy → keep it minimal for performance</li>
         </ul>
         <figure>
-          <img src="../assets/img/blog2/Clipping_1.png" alt="Clipping diagram">
+          <img src="../assets/img/blog2/Clipping.png" alt="Clipping diagram">
           <figcaption>Clipping trims triangles to the visible region (expensive, so avoid when possible).</figcaption>
         </figure>
       </li>
@@ -1459,7 +1459,7 @@
     </p>
     
     <figure>
-      <img src="../assets/img/blog2/Texture_Image1_1.png" alt="Texture mapping illustration">
+      <img src="../assets/img/blog2/Texture_Image1.png" alt="Texture mapping illustration">
       <figcaption>Textures add detail, but sampling them efficiently is the real challenge.</figcaption>
     </figure>
     
@@ -1500,7 +1500,7 @@
     </p>
     
     <figure>
-      <img src="../assets/img/blog2/Texture_Image2_1.png" alt="Texture gradients and mipmapping illustration">
+      <img src="../assets/img/blog2/Texture_Image2.png" alt="Texture gradients and mipmapping illustration">
       <figcaption>Gradients drive mip selection and anisotropic footprint.</figcaption>
     </figure>
     
@@ -1642,7 +1642,7 @@
     </ul>
     
     <figure>
-      <img src="../assets/img/blog2/Blending_1.png" alt="Blending pipeline diagram">
+      <img src="../assets/img/blog2/Blending.png" alt="Blending pipeline diagram">
       <figcaption>Blend and depth/stencil: the last gate before a pixel becomes visible.</figcaption>
     </figure>
     
