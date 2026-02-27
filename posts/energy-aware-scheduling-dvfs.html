@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>With Great Power Comes Great Responsibility — Energy Aware Scheduling and DVFS for modern SoCs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="description" content="A deep dive into power management in modern SoCs, covering Dynamic Voltage and Frequency Scaling (DVFS), Static vs Dynamic power, and Energy Aware Scheduling (EAS).">
+  <meta name="keywords" content="GPU, SoC, DVFS, EAS, Energy Aware Scheduling, Power Management, Thermal Throttling, ARM, Qualcomm, Mobile Hardware">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    /* Using your existing CSS styles from the previous blogs */
+    .layout { position: relative; }
+    @media (min-width: 1100px) {
+      main { max-width: 980px; padding-right: 280px; }
+      .toc { display: block; position: fixed; right: 24px; top: 110px; width: 240px; max-height: calc(100vh - 140px); overflow: auto; border: 1px solid #e4e4e4; background: rgba(255,255,255,0.92); backdrop-filter: blur(6px); border-radius: 10px; padding: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+    }
+    .toc { display: none; }
+    .toc-title { font-family: ui-monospace, monospace; font-size: 0.85rem; font-weight: 700; color: #333; margin-bottom: 8px; }
+    .toc a { display: block; text-decoration: none; color: #222; font-size: 0.88rem; padding: 6px 8px; border-radius: 8px; line-height: 1.35; }
+    .toc a:hover { background: #f3f3f3; }
+    .toc a.active { background: #e7f0ff; color: #0046a8; font-weight: 600; }
+    
+    body { font-family: system-ui, sans-serif; line-height: 1.6; margin: 0; background: #fafafa; color: #222; }
+    main { max-width: 780px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; background: #ffffff; }
+    h1, h2, h3 { line-height: 1.3; font-weight: 700; color: #111; }
+    h2 { font-size: 1.6rem; margin-top: 2.2rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+    img { max-width: 100%; height: auto; display: block; margin: 1.4rem auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    figure { margin: 1.6rem 0; text-align: center; }
+    figcaption { font-size: 0.9rem; color: #666; margin-top: 0.4rem; }
+    .lead { font-size: 1.1rem; font-style: italic; color: #444; }
+    .signature { margin-top: 2rem; font-weight: 600; }
+    .back-home { display: inline-block; margin-bottom: 20px; color: #0066cc; text-decoration: none; font-size: 0.9rem; }
+    .tags span { display: inline-block; background: #e7f0ff; color: #0046a8; padding: 4px 10px; margin: 4px 6px 0 0; border-radius: 6px; font-size: 0.85rem; }
+
+    /* Dark Mode */
+    @media (prefers-color-scheme: dark) {
+      body { background: #050608; color: #f4f4f4; }
+      main { background: #111319; }
+      h1, h2, h3 { color: #ffffff; }
+      .toc { border-color: #333; background: rgba(17,19,25,0.85); }
+      .toc-title, .toc a { color: #f4f4f4; }
+      .toc a:hover { background: #181b23; }
+      .toc a.active { background: #22304a; color: #cfe3ff; }
+      .lead { color: #ccc; }
+    }
+
+    /* Typewriter Style Header */
+    .blog-main-title { font-size: 2.2rem; font-weight: 800; margin: 0; font-family: "Courier New", monospace; }
+    .blog-sub-title { font-size: 1.2rem; font-weight: 400; margin: 5px 0; opacity: 0.8; }
+    .watermark { position: fixed; left: 12px; bottom: 10px; font-size: 12px; color: rgba(15, 23, 42, 0.5); }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+    <aside class="toc" aria-label="Table of contents">
+      <div class="toc-title">ON THIS PAGE</div>
+      <nav id="toc-list"></nav>
+    </aside>
+
+    <main>
+      <article>
+        <header>
+          <a href="../index.html" class="back-home">← Back to Home</a>
+          <div class="blog-title-block">
+            <h1 class="typewriter-line blog-main-title" data-text="With Great Power Comes Great Responsibility"></h1>
+            <h2 class="typewriter-line blog-sub-title" data-text="Energy Aware Scheduling and DVFS in modern SoCs"></h2>
+          </div>
+          
+          <div style="margin: 15px 0; font-size: 0.9rem; color: #666;">
+            <span>👤 Ankit Singh (Senior Engineer - GPU Research)</span> | 
+            <span>📅 Published: 27 Feb 2026</span>
+          </div>
+
+          <div class="tags">
+            <span>#PowerManagement</span><span>#DVFS</span><span>#EAS</span><span>#SoC</span><span>#MobileArchitecture</span>
+          </div>
+        </header>
+
+        <p class="lead">
+          I recently watched the trailer for <em>Masters of the Universe</em>, and that iconic line, "I have the Power!" really stuck with me. It resonated so much that I decided it was time to finally write my next article about power. (Joking, but you really should check out that trailer! :D)
+        </p>
+
+        <figure>
+          <img src="../assets/img/blog3/1.png" alt="I have the power">
+          <figcaption>The ultimate goal of every SoC designer: having the power, but managing it wisely.</figcaption>
+        </figure>
+
+        <p>I've been meaning to write about dynamic power consumption in mobile systems for a while now—specifically, how modern devices manage it through software. Our drivers are already quite diligent, constantly calculating which frequency to set based on the CPU or GPU workload. However, these estimates are tricky. We always want peak performance, but we can't let the device turn into a pocket-sized furnace.</p>
+
+        <h2 id="tldr">TLDR</h2>
+        <figure>
+          <img src="../assets/img/blog3/2.png" alt="Power TLDR">
+          <figcaption>A quick summary of the power-performance balancing act.</figcaption>
+        </figure>
+
+        <h2 id="introduction">Introduction</h2>
+        <p>Let's take a breath and start step-by-step. First, we need to understand <strong>Frequency</strong> and how it causes thermal power to increase.</p>
+        <p>Computers run on a <strong>clock signal</strong>. With each tick, they execute instructions. <br>
+           <strong>Frequency = how many times per second the clock ticks.</strong></p>
+        
+        <ul>
+          <li><strong>More ticks</strong> → more instructions processed → faster performance (The high achiever's dream).</li>
+          <li><strong>More frequency</strong> → More switching of tiny transistors per second.</li>
+          <li><strong>More switching</strong> → More power used, generated, and dissipated (The overheating reality).</li>
+        </ul>
+
+        <p>This explains why every mobile chip doesn't just run at its maximum frequency. It runs at an <strong>optimum frequency</strong> that balances performance and power. Overheating doesn't just throttle performance; it can physically damage the silicon. In modern systems, controlling power is often a higher priority than chasing raw performance.</p>
+
+        <figure>
+          <img src="../assets/img/blog3/3.png" alt="Frequency vs Temperature">
+          <figcaption>Conceptual diagram: As frequency increases, temperature rises exponentially, forcing a sharp adjustment in voltage.</figcaption>
+        </figure>
+
+        <h2 id="static-vs-dynamic">Static vs Dynamic Power</h2>
+        <p>In SoC design, power consumption is generally divided into two main categories: <strong>Dynamic Power</strong> (active switching) and <strong>Static Power</strong> (idle leakage).</p>
+        
+        <p>As process nodes have shrunk (from 90nm to 5nm), the balance has shifted. In older tech, dynamic power was the boss. In modern FinFET nodes, static power (leakage) can account for <strong>50% or more</strong> of the total power budget.</p>
+
+        <h3>1. Dynamic Power (\(P_{dyn}\))</h3>
+        <p>This is the energy consumed by logic states flipping (0 → 1). It consists of <strong>Capacitive Switching Power</strong> and <strong>Internal (Short-circuit) Power</strong>.</p>
+        <p><strong>The Formula:</strong> \[P_{dyn} \approx \alpha \cdot C \cdot V^2 \cdot f\]</p>
+        <ul>
+          <li>\(\alpha\): Activity factor.</li>
+          <li>\(C\): Capacitance.</li>
+          <li>\(V\): Supply voltage.</li>
+          <li>\(f\): Frequency.</li>
+        </ul>
+        <blockquote><strong>Key Takeaway:</strong> Because Voltage (\(V\)) is squared, reducing voltage is the most effective way to cut dynamic power.</blockquote>
+
+        <h3>2. Static Power (\(P_{static}\))</h3>
+        <p>Often called <strong>Leakage Power</strong>, this is the energy consumed while transistors are "off." Small amounts of current trickle through the silicon regardless of activity.</p>
+        <p><strong>The Formula:</strong> \[P_{static} \approx I_{leakage} \cdot VDD\]</p>
+        <blockquote><strong>Key Takeaway:</strong> Static power is highly sensitive to temperature. As a chip gets hotter, leakage increases exponentially, which can lead to "thermal runaway."</blockquote>
+
+        <h2 id="dvfs-physics">DVFS: The Physics of Power</h2>
+        <p><strong>Dynamic Voltage and Frequency Scaling (DVFS)</strong> is the most sophisticated tool we have. It leverages the quadratic relationship between voltage and power.</p>
+        
+        <p>If you simply reduce frequency (\(f\)) by half, you reduce power by 50%. But, because lower frequency allows you to also lower the supply voltage (\(V\)), the savings are exponential.</p>
+        <p>If you reduce <strong>both</strong> \(V\) and \(f\) by half: \[P_{new} \propto (0.5V)^2 \cdot (0.5f) = 0.125 \cdot P_{orig}\]</p>
+        <p>That is an <strong>87.5% reduction</strong> in power! This is why DVFS is the gold standard for mobile efficiency.</p>
+
+        <h2 id="software-stack">The Software Stack: The Decision Maker</h2>
+        <p>DVFS isn't just a hardware feature; it requires a complex software stack to decide when to scale.</p>
+        
+        <ul>
+          <li><strong>The Governor (The Decision Maker):</strong> High-level policy engine. Linux governors like <code>schedutil</code> or <code>ondemand</code> monitor utilization every 10-20ms and decide to scale up or down.</li>
+          <li><strong>The Framework (The Intermediate):</strong> <code>cpufreq</code> or <code>devfreq</code>. It maintains the <strong>OPP (Operating Performance Points)</strong> table—a list of safe (Voltage, Frequency) pairs.</li>
+          <li><strong>The Driver (The Executor):</strong> Communicates with the PMU (Power Management Unit) to actually perform the "Step-Up" or "Step-Down" sequence.</li>
+        </ul>
+
+        <h2 id="eas">Energy Aware Scheduling (EAS)</h2>
+        <p>In the old days, the OS treated every core the same. Today's "Big.LITTLE" architectures require <strong>Energy Aware Scheduling (EAS)</strong>. It uses a mathematical <strong>Energy Model (EM)</strong> stored in the device tree to calculate the exact milliwatt cost of running a task on a Little core at 1.5GHz vs. a Big core at 0.8GHz.</p>
+        <p>The goal is to minimize the <strong>"cost per instruction,"</strong> delaying the moment the device hits its thermal limit.</p>
+
+        <h2 id="conclusion">Conclusion</h2>
+        <p>In today's age of shrinking attention spans, the pressure for instant performance extends to our chips. DVFS and EAS are the silent guardians that allow our devices to feel fast without burning our hands. There is much more depth to this—AI-based prediction, adaptive guardbands, and real-time thermal frameworks—but I hope this sparks your curiosity into the fascinating world of power architecture.</p>
+
+        <p class="signature">Keep TRYing, stay WELL, and keep deBUGing.</p>
+        <hr>
+        <h2>Comments</h2>
+        <div id="giscus-container"></div>
+      </article>
+    </main>
+  </div>
+
+  <div class="watermark">trywellbug.com | Ankit Singh</div>
+
+  <script>
+    // Reuse your typewriter and ToC scripts from Blog 2 here
+    (function () {
+      const lines = document.querySelectorAll(".typewriter-line");
+      function runTypewriter(el, delayStart = 0) {
+        const text = el.getAttribute("data-text") || "";
+        let i = 0; el.textContent = "";
+        function typing() {
+          if (i <= text.length) {
+            el.textContent = text.slice(0, i); i++;
+            setTimeout(typing, 50 + Math.random() * 70);
+          }
+        }
+        setTimeout(typing, delayStart);
+      }
+      let delay = 500;
+      lines.forEach(line => {
+        runTypewriter(line, delay);
+        delay += (line.getAttribute("data-text") || "").length * 55;
+      });
+    })();
+
+    // Simple ToC Builder
+    (function () {
+      const tocList = document.getElementById("toc-list");
+      const headings = document.querySelectorAll("h2, h3");
+      headings.forEach(h => {
+        const a = document.createElement("a");
+        if (!h.id) h.id = h.textContent.replace(/\s+/g, '-').toLowerCase();
+        a.href = "#" + h.id;
+        a.textContent = h.textContent;
+        if (h.tagName === "H3") a.style.paddingLeft = "20px";
+        tocList.appendChild(a);
+      });
+    })();
+  </script>
+</body>
+</html>
