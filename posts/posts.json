@@ -10,14 +10,14 @@
     "title": "How a Triangle Travels — A Mobile GPU Hardware pipeline",
     "file": "how-a-triangle-travels-2.html",
     "description": "A deep dive into the mobile GPU pipeline, tile-based rendering, and ARM Mali vs Qualcomm Adreno.",
-    "date": "2025-01-06",
+    "date": "2026-01-06",
     "read": "20 min read"
   },
   {
     "title": "With Great Power Comes Great Responsibility (Energy Aware Scheduling and DVFS in modern SoCs )",
     "file": "energy-aware-scheduling-dvfs.html",
     "description": "A quick dive into frequency and voltage scaling techiques to contorl power in SoCs",
-    "date": "2025-02-27",
+    "date": "2026-02-27",
     "read": "10 min read"
   }
 ]
