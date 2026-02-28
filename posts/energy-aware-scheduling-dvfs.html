@@ -108,62 +108,212 @@
           <li><strong>More frequency</strong> → More switching of tiny transistors per second.</li>
           <li><strong>More switching</strong> → More power used, generated, and dissipated (The overheating reality).</li>
         </ul>
-
-        <p>This explains why every mobile chip doesn't just run at its maximum frequency. It runs at an <strong>optimum frequency</strong> that balances performance and power. Overheating doesn't just throttle performance; it can physically damage the silicon. In modern systems, controlling power is often a higher priority than chasing raw performance.</p>
-
+        
+        <p>Hope its explains in brief why every mobile chip doesn't just run its maximum frequency but at an <strong>optimum frequency</strong>  that balances performance and power. Overheating issues not only affects the performance but may damage the chips as well. It becomes highest priority of the system to control power first then care for performance. Diagram below explains how when frequency increases it may reach a critical point then voltage and frequency have to adjusted sharply to mana temperature. (I don't swear by numbers plotted here , this just to explain the scenario) </p>
         <figure>
           <img src="../assets/img/blog3/3.png" alt="Frequency vs Temperature">
           <figcaption>Conceptual diagram: As frequency increases, temperature rises exponentially, forcing a sharp adjustment in voltage.</figcaption>
         </figure>
 
-        <h2 id="static-vs-dynamic">Static vs Dynamic Power</h2>
-        <p>In SoC design, power consumption is generally divided into two main categories: <strong>Dynamic Power</strong> (active switching) and <strong>Static Power</strong> (idle leakage).</p>
+        <h2 id="static-vs-dynamic-power">Static vs Dynamic Power</h2>
         
-        <p>As process nodes have shrunk (from 90nm to 5nm), the balance has shifted. In older tech, dynamic power was the boss. In modern FinFET nodes, static power (leakage) can account for <strong>50% or more</strong> of the total power budget.</p>
-
-        <h3>1. Dynamic Power (\(P_{dyn}\))</h3>
-        <p>This is the energy consumed by logic states flipping (0 → 1). It consists of <strong>Capacitive Switching Power</strong> and <strong>Internal (Short-circuit) Power</strong>.</p>
-        <p><strong>The Formula:</strong> \[P_{dyn} \approx \alpha \cdot C \cdot V^2 \cdot f\]</p>
-        <ul>
-          <li>\(\alpha\): Activity factor.</li>
-          <li>\(C\): Capacitance.</li>
-          <li>\(V\): Supply voltage.</li>
-          <li>\(f\): Frequency.</li>
-        </ul>
-        <blockquote><strong>Key Takeaway:</strong> Because Voltage (\(V\)) is squared, reducing voltage is the most effective way to cut dynamic power.</blockquote>
-
-        <h3>2. Static Power (\(P_{static}\))</h3>
-        <p>Often called <strong>Leakage Power</strong>, this is the energy consumed while transistors are "off." Small amounts of current trickle through the silicon regardless of activity.</p>
-        <p><strong>The Formula:</strong> \[P_{static} \approx I_{leakage} \cdot VDD\]</p>
-        <blockquote><strong>Key Takeaway:</strong> Static power is highly sensitive to temperature. As a chip gets hotter, leakage increases exponentially, which can lead to "thermal runaway."</blockquote>
-
-        <h2 id="dvfs-physics">DVFS: The Physics of Power</h2>
-        <p><strong>Dynamic Voltage and Frequency Scaling (DVFS)</strong> is the most sophisticated tool we have. It leverages the quadratic relationship between voltage and power.</p>
+        <p>Hopefully I have hooked enough to care about power. In the context of System-on-Chip (SoC) design, power consumption is generally divided into two main categories: <strong>Dynamic Power</strong> (power consumed while the circuit is active and switching) and <strong>Static Power</strong> (power consumed even when the circuit is idle).</p>
         
-        <p>If you simply reduce frequency (\(f\)) by half, you reduce power by 50%. But, because lower frequency allows you to also lower the supply voltage (\(V\)), the savings are exponential.</p>
-        <p>If you reduce <strong>both</strong> \(V\) and \(f\) by half: \[P_{new} \propto (0.5V)^2 \cdot (0.5f) = 0.125 \cdot P_{orig}\]</p>
-        <p>That is an <strong>87.5% reduction</strong> in power! This is why DVFS is the gold standard for mobile efficiency.</p>
-
-        <h2 id="software-stack">The Software Stack: The Decision Maker</h2>
-        <p>DVFS isn't just a hardware feature; it requires a complex software stack to decide when to scale.</p>
+        <p>As process nodes have shrunk (e.g., from 90nm down to 5nm), the balance between these two has shifted significantly. In older technologies, dynamic power was the dominant factor; in modern "FinFET" and sub-10nm nodes, static power (leakage) can account for 50% or more of the total power budget.</p>
+        
+        <h3 id="dynamic-power">1. Dynamic Power (P<sub>dyn</sub>)</h3>
+        
+        <p>Dynamic power is the energy consumed by the transition of logic states (0→1 and 1→0). It is composed of two sub-components:</p>
         
         <ul>
-          <li><strong>The Governor (The Decision Maker):</strong> High-level policy engine. Linux governors like <code>schedutil</code> or <code>ondemand</code> monitor utilization every 10-20ms and decide to scale up or down.</li>
-          <li><strong>The Framework (The Intermediate):</strong> <code>cpufreq</code> or <code>devfreq</code>. It maintains the <strong>OPP (Operating Performance Points)</strong> table—a list of safe (Voltage, Frequency) pairs.</li>
-          <li><strong>The Driver (The Executor):</strong> Communicates with the PMU (Power Management Unit) to actually perform the "Step-Up" or "Step-Down" sequence.</li>
+          <li><strong>Capacitive Switching Power:</strong> This is the energy required to charge and discharge the parasitic capacitance of the logic gates and the interconnect wires.</li>
+          <li><strong>Internal Power (Short-circuit):</strong> During a transition, there is a momentary "crowbar" effect where both the PMOS and NMOS transistors are partially ON, creating a direct path from VDD to Ground.</li>
         </ul>
+        
+        <p><strong>The Formula:</strong></p>
+        \[P_{dyn} \approx \alpha \cdot C \cdot V^2 \cdot f\]
+        
+        <ul>
+          <li><strong>&alpha;:</strong> Activity factor (how often the signal flips).</li>
+          <li><strong>C:</strong> Capacitance of the circuit.</li>
+          <li><strong>V:</strong> Supply voltage.</li>
+          <li><strong>f:</strong> Clock frequency.</li>
+        </ul>
+        
+        <blockquote>
+          <p><strong>Key Takeaway:</strong> Because Voltage (V) is squared, reducing the supply voltage is the most effective way to cut dynamic power.</p>
+        </blockquote>
+        
+        <h3 id="static-power">2. Static Power (P<sub>static</sub>)</h3>
+        
+        <p>Static power, often called <strong>Leakage Power</strong>, is the energy consumed while the transistors are "off." Even when a transistor is theoretically closed, small amounts of current trickle through the silicon.</p>
+        
+        <p>The primary contributors to static power are:</p>
+        
+        <ul>
+          <li><strong>Sub-threshold Leakage:</strong> Current that flows between the source and drain even when the gate voltage is below the threshold (Vgs &lt; Vth).</li>
+          <li><strong>Gate Leakage:</strong> Current "tunnelling" through the extremely thin gate oxide layer.</li>
+          <li><strong>Reverse-bias Junction Leakage:</strong> Current leaking through the P-N junctions of the transistor.</li>
+        </ul>
+        
+        <p><strong>The Formula (Simplified):</strong></p>
+        \[P_{static} \approx I_{leakage} \cdot VDD\]
+        
+        <blockquote>
+          <p><strong>Key Takeaway:</strong> Static power is highly sensitive to temperature. As a chip gets hotter, leakage current increases exponentially, which can lead to "thermal runaway."</p>
+        </blockquote>
+        
+        <h3 id="comparison-at-a-glance">Comparison at a Glance</h3>
+        
+        <figure>
+          <img src="../assets/img/blog3/4.png" alt="Dynamic vs Static Power Comparison">
+          <figcaption>A high-level comparison of Dynamic and Static power characteristics.</figcaption>
+        </figure>
+        
+        <h3 id="how-they-interact-in-an-soc">How they interact in an SoC</h3>
+        
+        <p>In a real-world scenario like a smartphone:</p>
+        
+        <ol>
+          <li><strong>While gaming:</strong> Your SoC uses high <strong>Dynamic Power</strong> because the GPU and CPU are switching at gigahertz speeds.</li>
+          <li><strong>While in your pocket:</strong> Your SoC's <strong>Static Power</strong> is the primary culprit for draining the battery, as thousands of "off" transistors are still leaking current.</li>
+        </ol>
+        
+        <p>To combat this, designers use <strong>Power Gating</strong>, where they physically shut off the power supply to idle blocks (like a light switch), effectively reducing leakage current to near zero for those specific areas.</p>
 
-        <h2 id="eas">Energy Aware Scheduling (EAS)</h2>
-        <p>In the old days, the OS treated every core the same. Today's "Big.LITTLE" architectures require <strong>Energy Aware Scheduling (EAS)</strong>. It uses a mathematical <strong>Energy Model (EM)</strong> stored in the device tree to calculate the exact milliwatt cost of running a task on a Little core at 1.5GHz vs. a Big core at 0.8GHz.</p>
-        <p>The goal is to minimize the <strong>"cost per instruction,"</strong> delaying the moment the device hits its thermal limit.</p>
+        <h2 id="strategies-to-manage-power">Strategies to Manage Power (Dynamic Power)</h2>
+        
+        <p>Since I only worked on dynamic power, I will only tell you about that. Power Gating methods are used to control Static power though. But as I said I want to deal with the strategies where it can be controlled in software; usually, static power strategies often require hardware-specialised supports. Let's dive into Dynamic power strategies.</p>
+        
+        <p>Dynamic power is governed by the equation \(P_{dyn} \approx \alpha \cdot C \cdot V^2 \cdot f\). Most strategies focus on reducing one of these variables: frequency, voltage, or both.</p>
+        
+        <ul>
+          <li><strong>Clock Gating:</strong> The most common technique. It shuts off the clock signal to logic blocks that are not performing a function. This reduces the activity factor (\(\alpha\)) to zero for those registers.</li>
+          <li><strong>Voltage and Frequency Scaling (DVFS):</strong> This adjusts \(V\) and \(f\) based on workload. Because \(V\) is squared, dropping the voltage by <strong>20%</strong> can reduce dynamic power by nearly <strong>40%</strong>. Scaling can occur at different levels:
+            <ul>
+              <li><strong>Static Voltage Scaling (SVS):</strong> Different blocks of the SoC are given different, fixed voltages.</li>
+              <li><strong>Multi-level Voltage Scaling (MVS):</strong> A block can switch between a few discrete voltage/frequency "performance levels" (e.g., High, Medium, Low).</li>
+              <li><strong>Dynamic Voltage and Frequency Scaling (DVFS):</strong> The voltage and frequency are adjusted continuously (or in very fine steps) in response to real-time workload changes.</li>
+              <li><strong>Adaptive Voltage Scaling (AVS):</strong> The most advanced form, where a <strong>closed-loop hardware monitor</strong> (like a performance monitor or ring oscillator) tracks process, voltage, and temperature (PVT) variations to find the absolute minimum voltage required for a target frequency.</li>
+            </ul>
+          </li>
+        </ul>
+        
+        <p>While standard techniques like clock gating offer linear power savings, DVFS targets the <strong>quadratic relationship</strong> between voltage and power (\(P \propto V^2f\)), offering exponential savings.</p>
+                
+        <h2 id="dvfs">Dynamic Voltage and Frequency Scaling (DVFS)</h2>
+        
+        <p><strong>Dynamic Voltage and Frequency Scaling (DVFS)</strong> is a sophisticated power management technique used in modern SoC design. It leverages the fact that CMOS power consumption is proportional to the square of the operating voltage (\(V^2\)) and linearly proportional to frequency (\(f\)).</p>
+        
+        <p>By reducing both simultaneously during periods of low computational demand, you achieve an exponential reduction in power compared to simply slowing down the clock.</p>
+        
+        <h3 id="physics-of-dvfs">1. The Physics of DVFS</h3>
+        
+        <p>To understand why DVFS is so effective, we look at the <strong>Dynamic Power Equation</strong>:</p>
+        
+        \[P_{dynamic} = \alpha \cdot C \cdot V^2 \cdot f\]
+        
+        <p>If a processor is under-utilized, you could simply reduce the frequency (\(f\)) by half. This reduces power by <strong>50%</strong>. However, because CMOS gate delay decreases as voltage increases, a lower frequency allows you to also lower the supply voltage (\(V\)).</p>
+        
+        <p>If you reduce <strong>both</strong> \(V\) and \(f\) by half, the power reduction is:</p>
+        
+        \[P_{new} \propto (0.5V)^2 \cdot (0.5f) = 0.125 \cdot P_{original}\]
+        
+        <p>That is an <strong>87.5% reduction</strong> in power.</p>
+        
+        <figure>
+          <img src="../assets/img/blog3/5.png" alt="Physics of DVFS power reduction">
+          <figcaption>The combined effect of scaling voltage and frequency.</figcaption>
+        </figure>
+        
+        <h3 id="design-challenges">2. Design Challenges</h3>
+        
+        <p>While DVFS is powerful, it introduces significant complexity for the design engineer:</p>
+        
+        <ul>
+          <li><strong>Timing Sign-off:</strong> You must verify timing at <strong>multiple corners</strong> to ensure different voltages can support specific frequencies (e.g., 0.8V @ 400MHz, 1.2V @ 1.2GHz). These validated pairs are known as <strong>Operating Performance Points (OPP)</strong>.</li>
+          <li><strong>Temperature Inversion:</strong> In modern FinFET nodes, transistors can actually slow down when it gets colder at very low voltages. This makes "Worst Case" timing analysis much harder.</li>
+          <li><strong>Software Overhead:</strong> The OS must be "smart" enough to predict workload. If it switches states too often, the energy spent switching the regulators might exceed the energy saved!</li>
+        </ul>
+        
+        <h3 id="dvfs-software-stack">3. Software stack for DVFS</h3>
+        
+        <p>The software stack for DVFS is typically divided into three layers:</p>
+        
+        <ul>
+          <li><strong>A. The Governor (The Decision Maker):</strong> The high-level policy engine. It monitors CPU utilization (e.g., every 10–20ms) and decides whether to scale. Common Linux governors include <strong>Performance</strong>, <strong>Powersave</strong>, <strong>Ondemand</strong>, and <strong>Schedutil</strong> (the modern standard using direct scheduler data).</li>
+          <li><strong>B. The Framework (The Intermediate):</strong> Acts as a translator (e.g., <code>cpufreq</code> in Linux). It maintains the <strong>OPP Table</strong> and ensures the software never requests an "illegal" frequency.</li>
+          <li><strong>C. The Driver (The Executor):</strong> Communicates with physical hardware (PMU/PLL) and manages the "Step-Up" and "Step-Down" sequences to maintain chip stability.</li>
+        </ul>
+        
+        <h2 id="race-to-sleep-vs-dvfs">Managing "Race to Sleep" vs. DVFS</h2>
+        
+        <p>Software developers face a classic dilemma when optimizing for power:</p>
+        
+        <ol>
+          <li><strong>Race to Sleep:</strong> Run the CPU at maximum speed to finish the task as fast as possible, then shut the core off entirely (Power Gating).</li>
+          <li><strong>DVFS (Slower & Steadier):</strong> Run the CPU at a lower frequency so it finishes "just in time."</li>
+        </ol>
+        
+        <p><strong>Software Strategy:</strong> For purely computational tasks like rendering, "Race to Sleep" is often better to minimize static leakage. For interactive tasks like scrolling a webpage, DVFS is superior because it prevents the "jitter" of constant power cycling.</p>
+        
+        <h2 id="latency-and-deadlines">Real-Time Deadlines and Latency</h2>
+        
+        <p>Changing voltage and frequency isn't instantaneous; it has <strong>Transition Latency</strong>. If a high-priority interrupt arrives while the CPU is in a low-power state, it can take 50–100 microseconds to ramp up the voltage.</p>
+        
+        <p><strong>Solution:</strong> Advanced software uses <strong>Input Boosters</strong>. When you touch a smartphone screen, the OS immediately boosts the frequency to max <em>before</em> the application even starts processing the touch, ensuring the UI feels fluid.</p>
+        
+        <h2 id="software-guardbands">Software-Controlled Guardbands</h2>
+        
+        <p>Modern software can reduce the "extra voltage" margins built in for aging or defects. Through <strong>Adaptive Software Scaling</strong>, the system monitors error rates. If the error rate is zero, the software "undervolts" the chip below the official OPP table to save even more power.</p>
+        
+        <figure>
+          <img src="../assets/img/blog3/6.png" alt="Summary of Software DVFS Strategy">
+          <figcaption>Summary of software-driven DVFS strategy and performance layers.</figcaption>
+        </figure>
 
-        <h2 id="conclusion">Conclusion</h2>
-        <p>In today's age of shrinking attention spans, the pressure for instant performance extends to our chips. DVFS and EAS are the silent guardians that allow our devices to feel fast without burning our hands. There is much more depth to this—AI-based prediction, adaptive guardbands, and real-time thermal frameworks—but I hope this sparks your curiosity into the fascinating world of power architecture.</p>
-
-        <p class="signature">Keep TRYing, stay WELL, and keep deBUGing.</p>
-        <hr>
-        <h2>Comments</h2>
-        <div id="giscus-container"></div>
+        <h2 id="did-i-want-to-tell-something-more">Did I want to tell something more</h2>
+        
+        <p>Yeah, I just want to cover briefly how actually devices know if they are getting heated and should control the urge for more and more performance.</p>
+        
+        <h3 id="thermal-framework-tsens">The Thermal Framework & TSENS</h3>
+        
+        <p>Modern SoCs are peppered with <strong>TSENS (Thermal Sensors)</strong>—tiny hardware probes located near "hotspots" like the CPU clusters, GPU, and Modem.</p>
+        
+        <ol>
+          <li><strong>Polling & Thresholds:</strong> The software framework polls these sensors constantly. It has defined thresholds (e.g., 45°C for "Skin Temperature" or 95°C for "Silicon Junction").</li>
+          <li><strong>The Intervention:</strong> Once a threshold is hit, the Thermal Governor issues a <strong>Thermal Mitigation</strong> command.</li>
+          <li><strong>Capping the OPP:</strong> It doesn't just ask nicely; it "clips" the Operating Performance Point (OPP) table. Even if the <code>schedutil</code> governor sees 100% load and wants 2.8GHz, the Thermal Framework may lock the maximum allowable frequency to 1.5GHz. This is what we call <strong>Thermal Throttling</strong>. (Depends how the OPP table is designed.)</li>
+        </ol>
+        
+        <p>This allows modern-day chips to be aware of thermal limits beforehand instead of just waiting for overheating to happen.</p>
+        
+        <h2 id="energy-aware-scheduling">Energy Aware Scheduling (EAS): Intelligence over Brute Force</h2>
+        
+        <p>In the old days, the OS treated every CPU core the same. Today’s mobile chips use <strong>Arm’s big.LITTLE</strong> or "Prime/Big/Little" architectures. This is where <strong>Energy Aware Scheduling (EAS)</strong> comes in.</p>
+        
+        <h3 id="the-energy-model">The Energy Model</h3>
+        
+        <p>EAS uses a mathematical <strong>Energy Model (EM)</strong> of the SoC stored in the device tree. This model tells the OS exactly how many milliwatts it costs to run a specific task on a "Little" core versus a "Big" core at a certain frequency.</p>
+        
+        <ul>
+          <li><strong>Placement Strategy:</strong> Instead of just ramping up the frequency of the current core, EAS asks: <em>"Is it more energy-efficient to run this background sync on a Little core at 1.5GHz, or a Big core at 0.8GHz?"</em></li>
+          <li><strong>The Goal:</strong> It minimizes the "cost per instruction." By choosing the most efficient core-frequency combination, EAS keeps the device in a lower power state for longer, delaying the moment the Thermal Governor has to step in and ruin the fun.</li>
+        </ul>
+        
+        <p>In today’s age of shrinking attention spans, the pressure for instant performance extends beyond humans to devices and chips as well. Modern processors operate under constant demand to deliver high performance, often resulting in increased power consumption. This is where techniques like Energy-Aware Scheduling (EAS) and Dynamic Voltage and Frequency Scaling (DVFS) become crucial. They enable fine-grained optimizations that allow chips to run at the most appropriate frequencies for a given workload, balancing performance and efficiency.</p>
+        
+        <p>There is much more depth to this topic—how energy models are built, how software predicts workload behavior, applying AI-based techniques for prediction, and how frequency decisions are dynamically adjusted in real-time. I hope this brief article sparks enough curiosity to encourage further exploration into this fascinating area.</p>
+        
+        <div class="conclusion">
+          <p><strong>Note:</strong> This article is based on my learning from the Voltage scaling section of the <em>Low Power Methodology Manual</em> and my experience working in DVFS. I would also like to thank one more <strong>EAS</strong> (Engineer who is Awesome and Stupendous), <strong>Samuel Wong</strong>, who lives and breathes this topic.</p>
+        
+          <p class="signature">Keep TRYing, stay WELL, and keep deBUGing.</p>
+          
+          <hr>
+          
+          <h2>Comments</h2>
+          <div id="giscus-container"></div>
       </article>
     </main>
   </div>
